@@ -1,0 +1,15 @@
+*.py[cod]
+.ipynb_checkpoints
+*.ipynb
+*.wpr
+*.lnk
+*.pdf
+.coverage
+sdepy/tests/cfr/*_realized.txt
+sdepy/tests/cfr/*.png
+doc/_build/*
+doc/generated/*
+build/*
+dist/*
+*egg-info/*
+

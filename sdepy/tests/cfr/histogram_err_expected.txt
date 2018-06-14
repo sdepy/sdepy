@@ -1,0 +1,8 @@
+TEST_ID                                    MEAN_ERROR    MAX_ERROR
+
+histogram_unif_lin                          0.0047796     0.017178
+histogram_unif_nonlin                        0.004135     0.021613
+histogram_norm_lin                          0.0061195     0.029678
+histogram_norm_nonlin                       0.0040277     0.029026
+histogram_trapz_lin                         0.0045502     0.018552
+histogram_trapz_nonlin                      0.0034422     0.022099
