@@ -93,7 +93,7 @@ It is best explained by examples:
     ...                theta=theta, k=k, sigma=sigma, paths=10*1000)(timeline)
     >>> x.shape
     (101, 3, 10000)
-	>>> gr = plt.plot(timeline, x[:, 0, :4])  # inspect a few paths
+    >>> gr = plt.plot(timeline, x[:, 0, :4])  # inspect a few paths
     >>> plt.show(gr) # doctest: +SKIP
 
 
@@ -121,7 +121,7 @@ It is best explained by examples:
     ...                paths=10*1000)(coarse_timeline)
     >>> x.shape
     (5, 10, 15, 10000)
-	>>> gr = plt.plot(coarse_timeline, x[:, 5, ::2, :].mean(axis=-1))
+    >>> gr = plt.plot(coarse_timeline, x[:, 5, ::2, :].mean(axis=-1))
     >>> plt.show() # doctest: +SKIP
 
   In the example above, set ``steps=100`` to go from inaccurate and fast,
@@ -149,9 +149,10 @@ It is best explained by examples:
    If more integrations steps are needed between points in the output timeline,
    use ``steps`` to keep the integration timeline consistent with the one
    of ``my_dw``:
-	>>> x = p(coarse_timeline, steps=timeline)
-	>>> x.shape
-	(5, 3, 10000)
+   
+    >>> x = p(coarse_timeline, steps=timeline)
+    >>> x.shape
+    (5, 3, 10000)
 
 
 7. Using **stochasticity sources with memory**
@@ -377,7 +378,7 @@ Comparison of integration errors, as the integration from ``t=0`` to
     ...     [p1(**args, steps=s)(timeline)[-1].mean()/exact - 1,
     ...      p2(**args, steps=s)(timeline)[-1].mean()/exact - 1]
     ...     for s in steps]))
-	>>> ax = plt.axes(label=0); ax.set_xscale('log'); ax.set_yscale('log')
+    >>> ax = plt.axes(label=0); ax.set_xscale('log'); ax.set_yscale('log')
     >>> gr = ax.plot(steps, errors)
     >>> plt.show()  # doctest: +SKIP
     >>> print('euler error: {:.2e}\n   rk error: {:.2e}'.format(errors[-1,0], errors[-1,1]))
@@ -430,9 +431,9 @@ make a difference here)::
     ...             vshape=xgrid.shape, x0=xgrid[..., np.newaxis],
     ...             i0=-1)(timeline=tgrid)
 
-Compute the green function and the solution ``u(x, t1)``
-(note the liberal use of ``quad`` below, enabled by the smoothness
-of the Gaussian kernel estimate ``a[i, j].pdf``)::
+Computation of the green function and of the solution ``u(x, t1)``
+(note the liberal use of ``scipy.integrate.quad`` below, enabled by 
+the smoothness of the Gaussian kernel estimate ``a[i, j].pdf``)::
 
     >>> a = montecarlo(xp, bins=100)
     >>> def green(y, i, j):
@@ -443,7 +444,7 @@ of the Gaussian kernel estimate ``a[i, j].pdf``)::
     ...     u1[j] = quad(lambda y: green(y, 0, j), lb, hb)[0]
     ...     u2[j] = quad(lambda y: sin(y)*green(y, 0, j), -np.inf, np.inf)[0]
 
-Compare against exact values::
+Comparison against exact values::
 
     >>> y = np.linspace(x0, x1, 500)
     >>> for i, j in ((1, 20), (2, 30), (3, 40)):

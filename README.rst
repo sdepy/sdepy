@@ -1,9 +1,7 @@
 =====
 SdePy
 =====
-.. image:: https://readthedocs.org/projects/sdepy/badge/?version=latest
-   :target: https://sdepy.readthedocs.io/en/latest/?badge=latest
-   :alt: Documentation Status
+|readthedocs|
 
 The SdePy package provides tools to state and numerically
 integrate Ito Stochastic Differential Equations (SDEs), including equations
@@ -32,11 +30,16 @@ here again out of practical need to safeguard dependencies.
 Start here
 ----------
 
--  `Installation           <https://pypi.org.project/sdepy>`_: ``pip install sdepy``
--  `Quick Guide            <https://sdepy.readthedocs.io/en/latest/intro.html#id2>`_
-   (as `code               <https://github.com/sdepy/sdepy/blob/master/quickguide.py>`_)
--  `Documentation          <https://sdepy.readthedocs.io/>`_
-   (as `pdf                <https://readthedocs.org/projects/sdepy/downloads/pdf/latest>`_)
+-  `Installation           <https://pypi.org/project/sdepy>`_: ``pip install sdepy``
+-  `Quick Guide            <https://sdepy.readthedocs.io/en/v1.0.0rc4/intro.html#id2>`_
+   (as `code               <https://github.com/sdepy/sdepy/blob/v1.0.0rc4/quickguide.py>`_)
+-  `Documentation          <https://sdepy.readthedocs.io/en/v1.0.0rc4>`_
+   (as `pdf                <https://readthedocs.org/projects/sdepy/downloads/pdf/v1.0.0rc4>`_)
 -  `Source                 <https://github.com/sdepy/sdepy>`_
--  `License                <https://github.com/sdepy/sdepy/blob/master/LICENSE.txt>`_
+-  `License                <https://github.com/sdepy/sdepy/blob/v1.0.0rc4/LICENSE.txt>`_
 -  `Bug Reports            <https://github.com/sdepy/sdepy/issues>`_
+
+
+.. |readthedocs| image:: https://readthedocs.org/projects/sdepy/badge/?version=latest
+   :target: https://sdepy.readthedocs.io/en/latest/?badge=latest
+   :alt: Documentation Status
