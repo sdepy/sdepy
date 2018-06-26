@@ -1,0 +1,34 @@
+language: python
+sudo: false
+install:
+  - rm --force ./dist/*
+  - python setup.py sdist bdist_wheel
+  - echo installing ./dist/sdepy*.whl
+  - pip install --no-deps --ignore-installed ./dist/sdepy*.whl
+   
+matrix:
+  include:
+    # minimum requirements, fast tests
+    - python: 3.5
+      before_install:
+        - pip install numpy=1.11.3 scipy=0.18.1 nose=1.3.7
+      script:
+        - python runtests.py 'setup_tests()'
+        - pushd ./build/tests
+        - python runtests.py 'run_fast()'
+        - popd
+        - python runtests.py 'exit_tests()'
+    # latest versions, full tests
+    - python: 3.6
+      before_install:
+        - pip install numpy>=1.13 scipy>=1.0 nose>=1.3.7
+        - pip install coverage>=4.5.1 codecov>=2.0.15
+      script:
+        - python runtests.py 'setup_tests()'
+        - pushd ./build/tests
+        - coverage run --rcfile=../../.coveragerc runtests.py 'run_full()'
+        - popd
+        - python runtests.py 'exit_tests()'
+      after_success:
+        - codecov
+    
