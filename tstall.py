@@ -5,15 +5,60 @@ import importlib
 import doctest
 import pdb
 
-# import from local package
 import sdepy
-from sdepy import test as tst
+from sdepy import test
 from sdepy import _config
 
-# check which target is being tested
-DIR = os.path.split(sdepy.__file__)[0]
-print(DIR)
 
+# -------------------
+# inspect directories
+# -------------------
+
+def getdir(file):
+    return os.path.dirname(os.path.abspath(file))
+
+# this script runs either from . or from ./build/tests
+SCRIPT_DIR = getdir(__file__)
+ishome = os.path.exists(os.path.join(SCRIPT_DIR, 'doc', 'quickguide.rst'))
+HOME_DIR = SCRIPT_DIR if ishome else os.path.join(
+    SCRIPT_DIR, os.pardir, os.pardir)
+assert os.path.exists(os.path.join(HOME_DIR, 'doc', 'quickguide.rst'))
+TEST_DIR = os.path.join(HOME_DIR, 'build', 'tests')
+if not ishome:
+    assert os.path.samefile(SCRIPT_DIR, TEST_DIR)
+
+# tests should run from the installed package, not from source
+PACKAGE_DIR = getdir(sdepy.__file__)
+issource = os.path.samefile(HOME_DIR,
+                            os.path.join(PACKAGE_DIR, os.pardir))
+
+print('running runtests.py with args', sys.argv[1:])
+print('script dir = ', os.path.abspath(SCRIPT_DIR))
+print('home dir =   ', os.path.abspath(HOME_DIR))
+print('test dir =   ', os.path.abspath(TEST_DIR))
+print('package dir =', os.path.abspath(PACKAGE_DIR))
+
+
+# --------------
+# setup and exit
+# --------------
+
+def setup_tests():
+    if not os.path.exists(TEST_DIR):
+        os.makedirs(TEST_DIR)
+    shutil.copyfile(os.path.join(HOME_DIR, __file__),
+                    os.path.join(TEST_DIR, __file__))
+
+
+def exit_tests():
+    if os.path.exists(os.path.join(TEST_DIR, '.coverage')):
+        shutil.copyfile(os.path.join(TEST_DIR, '.coverage'),
+                        os.path.join(HOME_DIR, '.coverage'))
+
+
+# ---------
+# run tests
+# ---------
 
 def reload():
 
@@ -39,24 +84,40 @@ def reload():
 
 
 def quickguide_doctests():
-    doctest.testfile(
-        os.path.join('.', 'doc', 'quickguide.rst')
-        )
+    return doctest.testfile(
+        os.path.join(HOME_DIR, 'doc', 'quickguide.rst'),
+        module_relative=False
+        ).failed
 
 
-def tstall():
+def run_fast():
+    assert not issource
+    res = test()
+    return res.errors + res.failures
 
+
+def run_full():
+    assert not issource
+    res1 = test('full', doctests=True)
+    res2 = quickguide_doctests()
+    return res1.errors + res1.failures + res2
+
+
+def run_insane():
+    # needs matplotlib.pyplot to be installed
+    # saves realized errors and plots in PACKAGE_DIR/tests/cfr
+    assert not issource
     res = []
 
     def run_tests(*var, **args):
-        res.append(tst(*var, **args))
+        res.append(test(*var, **args))
 
     print('------------------')
     print('RUNNING FULL TESTS')
     print('------------------\n')
 
     # run default tests
-    res.append(tst())
+    run_tests()
 
     # run quickguide doctests
     quickguide_doctests()
@@ -93,4 +154,14 @@ def tstall():
     print('Full tests results: {} errors, {} failures'
           .format(count_errors, count_failures))
 
-    return res
+    return count_errors + count_failures
+
+
+# --------------------------------------
+# minimal setup as a command line script
+# --------------------------------------
+
+if __name__ == '__main__':
+    for cmd in sys.argv[1:]:
+        if eval(cmd):
+            sys.exit(1)
