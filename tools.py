@@ -26,7 +26,7 @@ DIR = os.path.split(sdepy.__file__)[0]
 print(DIR)
 
 # setup the tester
-tst = sdepy.test
+test = sdepy.test
 
 
 # --------------------------------------------
@@ -89,12 +89,18 @@ def getcode(in_, out, mode='x'):
 
     with open(in_) as i, open(out, mode) as o:
         print(header, file=o)
+        sep = ''
         while True:
             a = i.readline()
-            if a == '':
+            a, EOF = a.strip(), a == ''
+            if EOF:
                 break
-            elif a.strip()[:3] in ('>>>', '...'):
-                print(a.strip()[4:], file=o)
+            elif a[:3] in ('>>>', '...'):
+                print(a[4:], file=o)
+                sep = '\n\n'
+            else:
+                print((sep + '# ' + a) if a else sep + '#', file=o)
+                sep = ''
 
 
 def quickguide_make():
@@ -109,6 +115,7 @@ def quickguide_run():
 
 
 def quickguide_doctests():
-    doctest.testfile(
-        os.path.join('.', 'doc', 'quickguide.rst')
-        )
+    return doctest.testfile(
+        os.path.join('.', 'doc', 'quickguide.rst'),
+        module_relative=False
+        ).failed
