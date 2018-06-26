@@ -31,12 +31,12 @@ Start here
 ----------
 
 -  `Installation           <https://pypi.org/project/sdepy>`_: ``pip install sdepy``
--  `Quick Guide            <https://sdepy.readthedocs.io/en/v1.0.0rc4/intro.html#id2>`_
-   (as `code               <https://github.com/sdepy/sdepy/blob/v1.0.0rc4/quickguide.py>`_)
--  `Documentation          <https://sdepy.readthedocs.io/en/v1.0.0rc4>`_
-   (as `pdf                <https://readthedocs.org/projects/sdepy/downloads/pdf/v1.0.0rc4>`_)
+-  `Quick Guide            <https://sdepy.readthedocs.io/en/v1.0.0/intro.html#id2>`_
+   (as `code               <https://github.com/sdepy/sdepy/blob/v1.0.0/quickguide.py>`_)
+-  `Documentation          <https://sdepy.readthedocs.io/en/v1.0.0>`_
+   (as `pdf                <https://readthedocs.org/projects/sdepy/downloads/pdf/v1.0.0>`_)
 -  `Source                 <https://github.com/sdepy/sdepy>`_
--  `License                <https://github.com/sdepy/sdepy/blob/v1.0.0rc4/LICENSE.txt>`_
+-  `License                <https://github.com/sdepy/sdepy/blob/v1.0.0/LICENSE.txt>`_
 -  `Bug Reports            <https://github.com/sdepy/sdepy/issues>`_
 
 
@@ -44,8 +44,8 @@ Start here
    :target: https://sdepy.readthedocs.io/en/latest/?badge=latest
    :alt: Documentation Status
    
-.. |travis| image:: https://travis-ci.org/m-cip/sdepy.svg?branch=master
-    :target: https://travis-ci.org/m-cip/sdepy
+.. |travis| image:: https://travis-ci.org/sdepy/sdepy.svg?branch=master
+    :target: https://travis-ci.org/sdepy/sdepy
 
-.. |codecov| image:: https://codecov.io/gh/m-cip/sdepy/branch/master/graph/badge.svg
-  :target: https://codecov.io/gh/m-cip/sdepy
+.. |codecov| image:: https://codecov.io/gh/sdepy/sdepy/branch/master/graph/badge.svg
+  :target: https://codecov.io/gh/sdepy/sdepy
