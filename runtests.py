@@ -83,7 +83,8 @@ def reload():
     importlib.reload(sdepy.tests)
 
 
-def quickguide_doctests():
+def run_quickguide():
+    # needs matplotlib.pyplot to be installed
     return doctest.testfile(
         os.path.join(HOME_DIR, 'doc', 'quickguide.rst'),
         module_relative=False
@@ -98,9 +99,8 @@ def run_fast():
 
 def run_full():
     assert not issource
-    res1 = test('full', doctests=True)
-    res2 = quickguide_doctests()
-    return res1.errors + res1.failures + res2
+    res = test('full', doctests=True)
+    return res.errors + res.failures
 
 
 def run_insane():
@@ -120,7 +120,7 @@ def run_insane():
     run_tests()
 
     # run quickguide doctests
-    quickguide_doctests()
+    res_quickguide = run_quickguide()
 
     # run tests with maximum code coverage, in all
     # kfunc modes
@@ -154,7 +154,7 @@ def run_insane():
     print('Full tests results: {} errors, {} failures'
           .format(count_errors, count_failures))
 
-    return count_errors + count_failures
+    return count_errors + count_failures + res_quickguide
 
 
 # --------------------------------------
