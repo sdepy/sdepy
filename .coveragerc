@@ -1,0 +1,7 @@
+[run]
+branch = True
+source = sdepy
+
+[report]
+omit =
+    *tests*
