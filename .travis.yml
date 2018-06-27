@@ -1,5 +1,6 @@
 language: python
 sudo: false
+
 install:
   - rm --force ./dist/*
   - python setup.py sdist bdist_wheel
