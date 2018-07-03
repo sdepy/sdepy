@@ -100,7 +100,7 @@ from .shortcuts import *
 import numpy.testing
 test = numpy.testing.Tester().test
 
-__version__ = '1.0.0'  # untagged
+__version__ = '1.0.0'  # release
 
 
 _exclude = ('np', 'numpy', 'scipy',

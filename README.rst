@@ -40,8 +40,8 @@ Start here
 -  `Bug Reports            <https://github.com/sdepy/sdepy/issues>`_
 
 
-.. |readthedocs| image:: https://readthedocs.org/projects/sdepy/badge/?version=latest
-   :target: https://sdepy.readthedocs.io/en/latest/?badge=latest
+.. |readthedocs| image:: https://readthedocs.org/projects/sdepy/badge/?version=v1.0.0
+   :target: https://sdepy.readthedocs.io/en/v1.0.0
    :alt: Documentation Status
    
 .. |travis| image:: https://travis-ci.org/sdepy/sdepy.svg?branch=master
