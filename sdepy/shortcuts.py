@@ -161,7 +161,7 @@ if _config.KFUNC in ('all', 'shortcuts'):
 
     bsd1d2 = kfunc(nvar=2)(bsd1d2)
     bscall = kfunc(nvar=2)(bscall)
-    bscall_dela = kfunc(nvar=2)(bscall_delta)
+    bscall_delta = kfunc(nvar=2)(bscall_delta)
     bsput = kfunc(nvar=2)(bsput)
     bsput_delta = kfunc(nvar=2)(bsput_delta)
 
