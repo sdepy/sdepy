@@ -45,7 +45,7 @@ KFUNC = _config.KFUNC
 
 # exact equality is tested up to the float resolution times EPS_FACTOR
 # (see eps function below)
-EPS_FACTOR = 10
+EPS_FACTOR = 16
 
 # each testing routine should call np.random.seed(SEED)
 SEED = 1234
