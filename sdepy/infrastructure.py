@@ -1288,8 +1288,20 @@ class wiener_source(source):
     ``rho`` values. Path dependent ``corr`` and ``rho`` are not supported.
 
     For time-dependent correlations, ``dw(t, dt)`` approximates the increments
-    of a process ``w(t)`` obeying the SDE ``dw(t) = corr(t)*dz(t)``,
-    where ``z(t)`` are standard uncorrelated Wiener processes.
+    of a process ``w(t)`` obeying the SDE ``dw(t) = D(t)*dz(t)``,
+    where ``z(t)`` are standard uncorrelated Wiener processes, and ``D(t)``
+    is a time-dependent matrix such that ``D(t) @ (D(t).T) == corr(t)``.
+    Note that, given any two time points ``s`` and ``t > s``,
+    by the Ito isometry the expectation value of
+    ``(w(t)-w(s))[i] * (w(t)-w(s))[j]``, i.e. the ``i``, ``j`` element of the
+    covariance matrix of increments of ``w`` from ``s`` to ``t``,
+    equals the integral of ``corr(u)[i, j]`` in ``du`` from ``s`` to ``t``.
+
+    For time-independent correlations, as well as for correlations that
+    depend linearly on ``t``, the resulting ``dw(t, dt)`` is exact, as
+    far as it can be within the accuracy of the pseudo-random
+    normal variate generator of NumPy. Otherwise, mind using small enough
+    ``dt`` intervals.
     """
 
     def __init__(self, *, paths=1, vshape=(), dtype=None,
@@ -2175,9 +2187,41 @@ dw, source of standard Wiener process (brownian motion) increments with memory.
 
     Notes
     -----
-    For time-dependent correlations the result is approximate,
-    mind running a first evaluation on a sequence of consecutive
-    closely spaced time points in the region of interest.
+    For time-independent correlations, as well as for correlations that
+    depend linearly on ``t``, the resulting ``w(t)`` is exact, as
+    far as it can be within the accuracy of the pseudo-random
+    normal variate generator of NumPy. Otherwise, 
+    mind running a first evaluation of ``w(t)`` on a sequence of
+    consecutive closely spaced time points in the region of interest.
+
+    Given ``t1 < s < t2``, the value of ``w(s)`` conditional on ``w(t1)``
+    and ``w(t2)`` is computed as follows.
+
+    Let ``A`` and ``B`` be respectively the time integral of
+    ``corr(t)`` between ``t1`` and ``s``, and between ``s`` and ``t2``,
+    such that:
+      - ``A + B`` is the expected covariance matrix of ``w(t2) - w(t1)``,
+      - ``A`` is the expected covariance matrix of ``w(s) - w(t1)``,
+      - ``B`` is the expected covariance matrix of ``w(t2) - w(s)``.
+    
+    Let ``Z = B @ np.linalg.inv(A + B)``, and let ``y`` be a random
+    normal variate, independent from ``w(t1)`` and ``w(t2)``,
+    with covariance matrix ``Z @ A`` (note that the latter is a symmetric
+    matrix, as a consequence of the symmetry of ``A`` and ``B``).
+    
+    Then, the follwing expression provides for a ``w(s)`` with the
+    needed correlations, and with ``w(s) - w(t1)`` independent from ``w(t1)``,
+    ``w(t2) - w(s)`` independent from ``w(s)``:
+
+    ``w(s) = Z @ w(t1) + (1 - Z) @ w(t2) + y``
+
+    This is easily proved by direct computation of the relevant correlation
+    matrices, and by using the fact that the random variables at play
+    are jointly normal, and hence lack of correlation entails independence.
+
+    Note that, when invoking ``w(s)``,
+    ``A`` is approximated as ``corr((t1+s)/2)*(s-t1)``, and
+    ``B`` is approximated as ``corr(s+t2)/2)*(t2-s)``.
 
     Methods
     -------
