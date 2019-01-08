@@ -19,7 +19,7 @@ matrix:
         - python runtests.py 'run_fast()'
         - popd
         - python runtests.py 'exit_tests()'
-    # latest versions, fast tests for python 3.6
+    # python 3.6, latest versions of other dependencies, fast tests
     - python: 3.6
       before_install:
         - pip install numpy>=1.13 scipy>=1.0 nose>=1.3.7
@@ -29,9 +29,8 @@ matrix:
         - python runtests.py 'run_fast()'
         - popd
         - python runtests.py 'exit_tests()'
-      after_success:
-        - codecov
-    # latest versions, full tests for python 3.7
+    # python 3.7, latest versions of other dependencies, full tests
+    # with code coverage
     - python: 3.7
       dist: xenial  # see travis-ci/travis-ci/issues/9815
       sudo: true
