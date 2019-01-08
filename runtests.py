@@ -94,13 +94,13 @@ def run_quickguide():
 def run_fast():
     assert not issource
     res = test()
-    return res.errors + res.failures
+    return len(res.errors + res.failures)
 
 
 def run_full():
     assert not issource
     res = test('full', doctests=True)
-    return res.errors + res.failures
+    return len(res.errors + res.failures)
 
 
 def run_insane():
@@ -151,9 +151,6 @@ def run_insane():
     print('FULL TESTS COMPLETED')
     print('--------------------\n')
 
-    print('Full tests results: {} errors, {} failures'
-          .format(count_errors, count_failures))
-
     return count_errors + count_failures + res_quickguide
 
 
@@ -162,6 +159,10 @@ def run_insane():
 # --------------------------------------
 
 if __name__ == '__main__':
-    for cmd in sys.argv[1:]:
-        if eval(cmd):
-            sys.exit(1)
+    assert len(sys.argv) == 2
+    cmd = sys.argv[1]
+    test_result = eval(cmd)
+    if cmd[:3] == 'run':
+        print(cmd, 'FINAL RESULT (0 if all tests passed):', test_result)
+    if test_result:
+        sys.exit(1)
