@@ -185,3 +185,9 @@ from the ``lognorm`` shortcut) and are wrapped as kfuncs as well.
 
    kfunc
    iskfunc
+
+   
+.. Testing
+   =======
+   
+.. include:: testing.rst
