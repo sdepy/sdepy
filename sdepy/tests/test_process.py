@@ -5,6 +5,8 @@ FORMAL TESTS ON THE PROCESS CLASS
 """
 from .shared import *
 process = sp.process
+piecewise_constant_process = sp.piecewise_constant_process
+_piecewise_constant_process = sp.infrastructure._piecewise_constant_process
 
 
 def test_import():
@@ -690,3 +692,55 @@ def process_chf_cdf(t, s, u, paths, vshape):
     assert_array_equal(p.cdf(x=-0.001), 0)
     assert_array_equal(p.cdf(x=1.001), 1)
     assert_raises(TypeError, p.cdf)
+
+
+# -------------------------------
+# test piecewise_constant_process
+# -------------------------------
+
+# enumerate test cases and launch tests
+def test_piecewise():
+    np.random.seed(SEED)
+
+    dtype = [np.float64, np.float32, np.float16]
+    vshape = [(3,), (2, 3)]
+    mode = [None, 'mid', 'forward', 'backward']
+    shift = [0, -2, -4]
+    do(tst_piecewise, [np.float], vshape, mode, shift)
+    do(tst_piecewise, dtype,        [()], mode,   [0])
+
+    with assert_warns(DeprecationWarning):
+        p = _piecewise_constant_process((1, 2), v=(10, 20))
+
+
+# case testing
+def tst_piecewise(dtype, vshape, mode, shift):
+
+    t = np.array((1, 2, 3), dtype=dtype) + shift
+    v = 1 + np.random.random((3,) + vshape).astype(dtype)
+    x = v.reshape(v.shape + (1,))
+
+    if mode is None:
+        p = piecewise_constant_process(t, v=v)  # default mode is 'mid'
+    else:
+        p = piecewise_constant_process(t, v=v, mode=mode)
+
+    # common checks
+    q = p*p + 2
+    assert_(isinstance(q, process))
+    assert_(p.interp_kind == 'nearest')
+    assert_(p.paths == 1)
+
+    # test values
+    if mode in (None, 'mid'):
+        s = np.array((0.50,    1, 1.49, 1.51, 2.49, 2.51,    3,  3.5))
+        y = np.stack((x[0], x[0], x[0], x[1], x[1], x[2], x[2], x[2]))
+        assert_allclose(p(s + shift), y)
+    elif mode == 'forward':
+        s = np.array((0.50,    1,  1.5,    2, 2.01,  2.5,    3, 3.01,  3.5))
+        y = np.stack((x[0], x[0], x[0], x[0], x[1], x[1], x[1], x[2], x[2]))
+        assert_allclose(p(s + shift), y)
+    elif mode == 'backward':
+        s = np.array((0.50,    1, 1.01,  1.5,    2, 2.01,  2.5,    3,  3.5))
+        y = np.stack((x[0], x[0], x[1], x[1], x[1], x[2], x[2], x[2], x[2]))
+        assert_allclose(p(s + shift), y)

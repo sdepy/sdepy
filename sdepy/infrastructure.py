@@ -15,6 +15,7 @@ import scipy.stats
 import scipy.interpolate
 import bisect
 import inspect
+import warnings
 
 
 ########################################
@@ -1091,45 +1092,49 @@ class process(np.ndarray):
 # A constructor for piecewise constant processes
 # ----------------------------------------------
 
-def _piecewise_constant_process(t, *, v, dtype=None,
-                                mode: 'mid / forward / backward'='mid'):
+def piecewise_constant_process(t, *, v, dtype=None,
+                               mode: 'mid / forward / backward'='mid'):
     """
     One path process with piecewise constant interpolation
     kind (kind='nearest').
     """
-
-    timeline, values = t, v
-    interp_kind = 'nearest'
+    t = np.asarray(t, dtype=dtype)
+    v = np.asarray(v, dtype=dtype)
 
     if mode == 'mid':
-        p = process(t=timeline, v=values)
-        p.interp_kind = interp_kind
-        return p
+        s, w = t, v
     else:
-        t = np.asarray(timeline, dtype=dtype)
-        v = np.asarray(values, dtype=dtype)
-        assert t.ndim <= 1 and t.size >= 2
-        s = np.zeros(t.size*2, dtype=t.dtype)
-        w = np.zeros((v.shape[0]*2,) + v.shape[1:], dtype=v.dtype)
-        delta = t.dtype.type(1)+np.finfo(t.dtype).resolution
+        s = np.full(t.size*2, np.nan, dtype=t.dtype)
+        w = np.full((v.shape[0]*2,) + v.shape[1:], np.nan, dtype=v.dtype)
         s[::2] = t
-        s[1::2] = t * delta
+        s[1::2] = t
         if mode == 'forward':
             w[1::2] = v
             w[2:-1:2] = v[:-1]
             w[0] = v[0]
-            p = process(s, v=w)
-            p.interp_kind = interp_kind
-            return p
         elif mode == 'backward':
             w[::2] = v
             w[1:-1:2] = v[1:]
             w[-1] = v[-1]
-            p = process(s, v=w)
-            p.interp_kind = interp_kind
-            return p
         else:
-            raise ValueError
+            raise ValueError(
+                "mode should be one of 'mid', 'forward', 'backward', "
+                'but {} was given'.format(mode))
+
+    p = process(s, v=w, dtype=dtype)
+    p.interp_kind = 'nearest'
+    return p
+
+
+# safeguard backward compatibility
+def _piecewise_constant_process(*args, **kwds):
+    """private alias of piecewise_constant_process
+    (unused, deprecated)"""
+
+    warnings.warn("use 'piecewise_constant_process' "
+                  "as included in the public API",
+                  DeprecationWarning)
+    return piecewise_constant_process(*args, **kwds)
 
 
 #######################################
@@ -2190,7 +2195,7 @@ dw, source of standard Wiener process (brownian motion) increments with memory.
     For time-independent correlations, as well as for correlations that
     depend linearly on ``t``, the resulting ``w(t)`` is exact, as
     far as it can be within the accuracy of the pseudo-random
-    normal variate generator of NumPy. Otherwise, 
+    normal variate generator of NumPy. Otherwise,
     mind running a first evaluation of ``w(t)`` on a sequence of
     consecutive closely spaced time points in the region of interest.
 
@@ -2203,12 +2208,12 @@ dw, source of standard Wiener process (brownian motion) increments with memory.
       - ``A + B`` is the expected covariance matrix of ``w(t2) - w(t1)``,
       - ``A`` is the expected covariance matrix of ``w(s) - w(t1)``,
       - ``B`` is the expected covariance matrix of ``w(t2) - w(s)``.
-    
+
     Let ``Z = B @ np.linalg.inv(A + B)``, and let ``y`` be a random
     normal variate, independent from ``w(t1)`` and ``w(t2)``,
     with covariance matrix ``Z @ A`` (note that the latter is a symmetric
     matrix, as a consequence of the symmetry of ``A`` and ``B``).
-    
+
     Then, the follwing expression provides for a ``w(s)`` with the
     needed correlations, and with ``w(s) - w(t1)`` independent from ``w(t1)``,
     ``w(t2) - w(s)`` independent from ``w(s)``:
