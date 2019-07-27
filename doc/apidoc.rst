@@ -16,6 +16,7 @@ Infrastructure
    :toctree: generated/
 
    process
+   piecewise
    montecarlo
 
 

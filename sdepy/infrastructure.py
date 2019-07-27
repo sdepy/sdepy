@@ -1092,36 +1092,69 @@ class process(np.ndarray):
 # A constructor for piecewise constant processes
 # ----------------------------------------------
 
-def piecewise_constant_process(t, *, v, dtype=None,
-                               mode: 'mid / forward / backward'='mid'):
+def piecewise(t=0., *, x=None, v=None, dtype=None, mode='mid'):
     """
-    One path process with piecewise constant interpolation
-    kind (kind='nearest').
+    Return a process that interpolates to a piecewise constant function.
+    
+    Parameters
+    ----------
+    t : array-like
+        Reference timeline (see below).
+    x : array-like, optional
+        Values of the process along the timeline and across paths.
+        One and only one of ``x``, ``v``, must be provided, 
+        as a keyword argument.
+    v : array-like, optional
+        Values of a deterministic (one path) process along the timeline.
+    dtype : data-type, optional
+        Data-type of the values of the process.
+    mode : string, optional
+        Specifies how the piecewise constant segments relate
+        to the reference timeline: 'mid', 'forward', 'backward'
+        set ``t[i]`` to be the midpoint, start or end point respectively,
+        of the constant segment with value ``x[i]`` or ``v[i]``.
+    
+    See Also
+    --------
+    process
+    
+    Notes
+    -----
+    Parameters ``t``, ``x``, ``v``, ``dtype`` conform to the ``process``
+    instantiation interface and shape requirements.
+    
+    The returned process ``p`` behaves as advertised upon interpolation
+    with default interpolation kind, and may be used 
+    as a time dependent piecewise constant parameter in SDE integration. 
+    However, its timeline ``p.t`` and values ``p.x`` 
+    are not guaranteed to coincide with the given ``t`` or ``x``, 
+    and should not be relied upon.    
     """
-    t = np.asarray(t, dtype=dtype)
-    v = np.asarray(v, dtype=dtype)
+    # delegate preprocessing of arguments to the process class
+    p = process(t, x=x, v=v, dtype=dtype)
+    t, x = p.t, p.x
 
     if mode == 'mid':
-        s, w = t, v
+        s, y = t, x
     else:
         s = np.full(t.size*2, np.nan, dtype=t.dtype)
-        w = np.full((v.shape[0]*2,) + v.shape[1:], np.nan, dtype=v.dtype)
+        y = np.full((x.shape[0]*2,) + x.shape[1:], np.nan, dtype=x.dtype)
         s[::2] = t
         s[1::2] = t
         if mode == 'forward':
-            w[1::2] = v
-            w[2:-1:2] = v[:-1]
-            w[0] = v[0]
+            y[1::2] = x
+            y[2:-1:2] = x[:-1]
+            y[0] = x[0]
         elif mode == 'backward':
-            w[::2] = v
-            w[1:-1:2] = v[1:]
-            w[-1] = v[-1]
+            y[::2] = x
+            y[1:-1:2] = x[1:]
+            y[-1] = x[-1]
         else:
             raise ValueError(
                 "mode should be one of 'mid', 'forward', 'backward', "
                 'but {} was given'.format(mode))
 
-    p = process(s, v=w, dtype=dtype)
+    p = process(s, x=y, dtype=dtype)
     p.interp_kind = 'nearest'
     return p
 
@@ -1131,10 +1164,10 @@ def _piecewise_constant_process(*args, **kwds):
     """private alias of piecewise_constant_process
     (unused, deprecated)"""
 
-    warnings.warn("use 'piecewise_constant_process' "
-                  "as included in the public API",
+    warnings.warn('call to sdepy.infrastructure._piecewise_constant_process, '
+                  'use sdepy.piecewise instead',
                   DeprecationWarning)
-    return piecewise_constant_process(*args, **kwds)
+    return piecewise(*args, **kwds)
 
 
 #######################################

@@ -5,7 +5,7 @@ FORMAL TESTS ON THE PROCESS CLASS
 """
 from .shared import *
 process = sp.process
-piecewise_constant_process = sp.piecewise_constant_process
+piecewise = sp.piecewise
 _piecewise_constant_process = sp.infrastructure._piecewise_constant_process
 
 
@@ -703,33 +703,43 @@ def test_piecewise():
     np.random.seed(SEED)
 
     dtype = [np.float64, np.float32, np.float16]
+    paths = [None, 5]
     vshape = [(3,), (2, 3)]
     mode = [None, 'mid', 'forward', 'backward']
     shift = [0, -2, -4]
-    do(tst_piecewise, [np.float], vshape, mode, shift)
-    do(tst_piecewise, dtype,        [()], mode,   [0])
+    do(tst_piecewise, [np.float], paths, vshape, mode, shift)
+    do(tst_piecewise,      dtype, paths,   [()], mode,   [0])
 
+    with assert_raises(ValueError):
+        p = piecewise((1, 2), v=(10, 20), mode='zzz')
     with assert_warns(DeprecationWarning):
         p = _piecewise_constant_process((1, 2), v=(10, 20))
-
+        
 
 # case testing
-def tst_piecewise(dtype, vshape, mode, shift):
+def tst_piecewise(dtype, paths, vshape, mode, shift):
 
     t = np.array((1, 2, 3), dtype=dtype) + shift
-    v = 1 + np.random.random((3,) + vshape).astype(dtype)
-    x = v.reshape(v.shape + (1,))
-
-    if mode is None:
-        p = piecewise_constant_process(t, v=v)  # default mode is 'mid'
+    if paths is None:
+        paths = 1
+        v = vv = 1 + np.random.random((3,) + vshape).astype(dtype)
+        x = v.reshape(v.shape + (1,))
+        xx = None
     else:
-        p = piecewise_constant_process(t, v=v, mode=mode)
+        x = xx = 1 + np.random.random((3,) + vshape + (paths,)).astype(dtype)
+        vv = None
+        
+    if mode is None:
+        p = piecewise(t, x=xx, v=vv)  # default mode is 'mid'
+    else:
+        p = piecewise(t, x=xx, v=vv, mode=mode)
 
     # common checks
     q = p*p + 2
     assert_(isinstance(q, process))
     assert_(p.interp_kind == 'nearest')
-    assert_(p.paths == 1)
+    assert_(p.paths == paths and p.vshape == vshape)
+    assert_(p(0).dtype == dtype)
 
     # test values
     if mode in (None, 'mid'):
@@ -744,3 +754,7 @@ def tst_piecewise(dtype, vshape, mode, shift):
         s = np.array((0.50,    1, 1.01,  1.5,    2, 2.01,  2.5,    3,  3.5))
         y = np.stack((x[0], x[0], x[1], x[1], x[1], x[2], x[2], x[2], x[2]))
         assert_allclose(p(s + shift), y)
+
+    # test degenerate case of single time point
+    q = piecewise(t=0., x=x[:1])
+    assert_allclose(q((-3, 0, 3)), np.stack((x[0], x[0], x[0])))
