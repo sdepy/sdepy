@@ -15,6 +15,7 @@ import scipy.stats
 import scipy.interpolate
 import bisect
 import inspect
+import warnings
 
 
 ########################################
@@ -1091,45 +1092,82 @@ class process(np.ndarray):
 # A constructor for piecewise constant processes
 # ----------------------------------------------
 
-def _piecewise_constant_process(t, *, v, dtype=None,
-                                mode: 'mid / forward / backward'='mid'):
+def piecewise(t=0., *, x=None, v=None, dtype=None, mode='mid'):
     """
-    One path process with piecewise constant interpolation
-    kind (kind='nearest').
+    Return a process that interpolates to a piecewise constant function.
+    
+    Parameters
+    ----------
+    t : array-like
+        Reference timeline (see below).
+    x : array-like, optional
+        Values of the process along the timeline and across paths.
+        One and only one of ``x``, ``v``, must be provided, 
+        as a keyword argument.
+    v : array-like, optional
+        Values of a deterministic (one path) process along the timeline.
+    dtype : data-type, optional
+        Data-type of the values of the process.
+    mode : string, optional
+        Specifies how the piecewise constant segments relate
+        to the reference timeline: 'mid', 'forward', 'backward'
+        set ``t[i]`` to be the midpoint, start or end point respectively,
+        of the constant segment with value ``x[i]`` or ``v[i]``.
+    
+    See Also
+    --------
+    process
+    
+    Notes
+    -----
+    Parameters ``t``, ``x``, ``v``, ``dtype`` conform to the ``process``
+    instantiation interface and shape requirements.
+    
+    The returned process ``p`` behaves as advertised upon interpolation
+    with default interpolation kind, and may be used 
+    as a time dependent piecewise constant parameter in SDE integration. 
+    However, its timeline ``p.t`` and values ``p.x`` 
+    are not guaranteed to coincide with the given ``t`` or ``x``, 
+    and should not be relied upon.    
     """
-
-    timeline, values = t, v
-    interp_kind = 'nearest'
+    # delegate preprocessing of arguments to the process class
+    p = process(t, x=x, v=v, dtype=dtype)
+    t, x = p.t, p.x
 
     if mode == 'mid':
-        p = process(t=timeline, v=values)
-        p.interp_kind = interp_kind
-        return p
+        s, y = t, x
     else:
-        t = np.asarray(timeline, dtype=dtype)
-        v = np.asarray(values, dtype=dtype)
-        assert t.ndim <= 1 and t.size >= 2
-        s = np.zeros(t.size*2, dtype=t.dtype)
-        w = np.zeros((v.shape[0]*2,) + v.shape[1:], dtype=v.dtype)
-        delta = t.dtype.type(1)+np.finfo(t.dtype).resolution
+        s = np.full(t.size*2, np.nan, dtype=t.dtype)
+        y = np.full((x.shape[0]*2,) + x.shape[1:], np.nan, dtype=x.dtype)
         s[::2] = t
-        s[1::2] = t * delta
+        s[1::2] = t
         if mode == 'forward':
-            w[1::2] = v
-            w[2:-1:2] = v[:-1]
-            w[0] = v[0]
-            p = process(s, v=w)
-            p.interp_kind = interp_kind
-            return p
+            y[1::2] = x
+            y[2:-1:2] = x[:-1]
+            y[0] = x[0]
         elif mode == 'backward':
-            w[::2] = v
-            w[1:-1:2] = v[1:]
-            w[-1] = v[-1]
-            p = process(s, v=w)
-            p.interp_kind = interp_kind
-            return p
+            y[::2] = x
+            y[1:-1:2] = x[1:]
+            y[-1] = x[-1]
         else:
-            raise ValueError
+            raise ValueError(
+                "mode should be one of 'mid', 'forward', 'backward', "
+                'but {} was given'.format(mode))
+
+    p = process(s, x=y, dtype=dtype)
+    p.interp_kind = 'nearest'
+    return p
+
+
+# safeguard backward compatibility
+def _piecewise_constant_process(*args, **kwds):
+    """private alias of piecewise_constant_process
+    (unused, deprecated)"""
+
+    warnings.warn('call to sdepy.infrastructure._piecewise_constant_process, '
+                  'use sdepy.piecewise instead',
+                  DeprecationWarning)
+    return piecewise(*args, **kwds)
 
 
 #######################################
@@ -2190,7 +2228,7 @@ dw, source of standard Wiener process (brownian motion) increments with memory.
     For time-independent correlations, as well as for correlations that
     depend linearly on ``t``, the resulting ``w(t)`` is exact, as
     far as it can be within the accuracy of the pseudo-random
-    normal variate generator of NumPy. Otherwise, 
+    normal variate generator of NumPy. Otherwise,
     mind running a first evaluation of ``w(t)`` on a sequence of
     consecutive closely spaced time points in the region of interest.
 
@@ -2203,12 +2241,12 @@ dw, source of standard Wiener process (brownian motion) increments with memory.
       - ``A + B`` is the expected covariance matrix of ``w(t2) - w(t1)``,
       - ``A`` is the expected covariance matrix of ``w(s) - w(t1)``,
       - ``B`` is the expected covariance matrix of ``w(t2) - w(s)``.
-    
+
     Let ``Z = B @ np.linalg.inv(A + B)``, and let ``y`` be a random
     normal variate, independent from ``w(t1)`` and ``w(t2)``,
     with covariance matrix ``Z @ A`` (note that the latter is a symmetric
     matrix, as a consequence of the symmetry of ``A`` and ``B``).
-    
+
     Then, the follwing expression provides for a ``w(s)`` with the
     needed correlations, and with ``w(s) - w(t1)`` independent from ``w(t1)``,
     ``w(t2) - w(s)`` independent from ``w(s)``:
