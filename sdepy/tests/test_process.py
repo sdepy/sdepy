@@ -586,8 +586,7 @@ def test_summary():
         a = getattr(p, 'p' + f)()
         b = getattr(np, f)(p, axis=-1)[..., np.newaxis]
         assert_allclose(a, b, rtol=eps(p.dtype))
-        # test out parameter (fails for 'min', 'max')
-        # if f in ('min', 'max'): continue
+        # test out parameter
         y = np.full((3, 5, 7, 1), np.nan)
         a = getattr(p, 'p' + f)(out=y)
         assert_(a.base is y)
@@ -596,9 +595,12 @@ def test_summary():
         # test dtype parameter
         a = getattr(p, 'p' + f)(dtype=np.float32)
         assert_(a.dtype == np.float32)
-    # test ddof parameter for pvar
+    # test ddof parameter for pvar and pstd
     a = p.pvar(ddof=1)
     assert_allclose(a, p.var(ddof=1, axis=-1)[..., np.newaxis],
+                    rtol=eps(p.dtype))
+    a = p.pstd(ddof=1)
+    assert_allclose(a, p.std(ddof=1, axis=-1)[..., np.newaxis],
                     rtol=eps(p.dtype))
 
     # summary along the timeline
@@ -607,8 +609,7 @@ def test_summary():
         a = getattr(p, 't' + f)()
         b = getattr(np, f)(p, axis=0)[np.newaxis, ...]
         assert_allclose(a, b, rtol=eps(p.dtype))
-        # test out parameter (fails for 'min', 'max')
-        # if f in ('min', 'max'): continue
+        # test out parameter
         y = np.full((1, 5, 7, 11), np.nan)
         a = getattr(p, 't' + f)(out=y)
         assert_(a.base is y)
@@ -618,9 +619,12 @@ def test_summary():
         a = getattr(p, 't' + f)(dtype=np.float32)
         assert_(a.dtype == np.float32)
 
-    # test ddof parameter for pvar
+    # test ddof parameter for tvar and tstd
     a = p.tvar(ddof=1)
     assert_allclose(a, p.var(ddof=1, axis=0)[np.newaxis, ...],
+                    rtol=eps(p.dtype))
+    a = p.tstd(ddof=1)
+    assert_allclose(a, p.std(ddof=1, axis=0)[np.newaxis, ...],
                     rtol=eps(p.dtype))
 
     # test tcumsum values

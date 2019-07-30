@@ -788,7 +788,8 @@ class process(np.ndarray):
         the minimum process value attained across paths.
         """
         return process(t=self.t,
-                       v=self.min(axis=-1, out=out))
+                       x=self.min(axis=-1, out=out,
+                                  keepdims=True))
 
     def pmax(self, out=None):
         """
@@ -796,7 +797,8 @@ class process(np.ndarray):
         the maximum process value attained across paths.
         """
         return process(t=self.t,
-                       v=self.max(axis=-1, out=out))
+                       x=self.max(axis=-1, out=out,
+                                  keepdims=True))
 
     def psum(self, dtype=None, out=None):
         """
@@ -847,14 +849,16 @@ class process(np.ndarray):
         process value attained along time.
         """
         return process(t=self.t[:1],
-                       x=self.min(axis=0, out=out)[np.newaxis, ...])
+                       x=self.min(axis=0, out=out,
+                                  keepdims=True))
 
     def tmax(self, out=None):
         """Constant process exposing for each path the maximum
         process value attained along time.
         """
         return process(t=self.t[:1],
-                       x=self.max(axis=0, out=out)[np.newaxis, ...])
+                       x=self.max(axis=0, out=out,
+                                  keepdims=True))
 
     def tsum(self, dtype=None, out=None):
         """
@@ -1095,14 +1099,14 @@ class process(np.ndarray):
 def piecewise(t=0., *, x=None, v=None, dtype=None, mode='mid'):
     """
     Return a process that interpolates to a piecewise constant function.
-    
+
     Parameters
     ----------
     t : array-like
         Reference timeline (see below).
     x : array-like, optional
         Values of the process along the timeline and across paths.
-        One and only one of ``x``, ``v``, must be provided, 
+        One and only one of ``x``, ``v``, must be provided,
         as a keyword argument.
     v : array-like, optional
         Values of a deterministic (one path) process along the timeline.
@@ -1113,22 +1117,22 @@ def piecewise(t=0., *, x=None, v=None, dtype=None, mode='mid'):
         to the reference timeline: 'mid', 'forward', 'backward'
         set ``t[i]`` to be the midpoint, start or end point respectively,
         of the constant segment with value ``x[i]`` or ``v[i]``.
-    
+
     See Also
     --------
     process
-    
+
     Notes
     -----
     Parameters ``t``, ``x``, ``v``, ``dtype`` conform to the ``process``
     instantiation interface and shape requirements.
-    
+
     The returned process ``p`` behaves as advertised upon interpolation
-    with default interpolation kind, and may be used 
-    as a time dependent piecewise constant parameter in SDE integration. 
-    However, its timeline ``p.t`` and values ``p.x`` 
-    are not guaranteed to coincide with the given ``t`` or ``x``, 
-    and should not be relied upon.    
+    with default interpolation kind, and may be used
+    as a time dependent piecewise constant parameter in SDE integration.
+    However, its timeline ``p.t`` and values ``p.x``
+    are not guaranteed to coincide with the given ``t`` or ``x``,
+    and should not be relied upon.
     """
     # delegate preprocessing of arguments to the process class
     p = process(t, x=x, v=v, dtype=dtype)
