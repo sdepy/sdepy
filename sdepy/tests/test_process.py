@@ -640,6 +640,16 @@ def test_summary():
     a = p.tcumsum(dtype=np.float32)
     assert_(a.dtype == np.float32)
 
+    # numpy summary operations
+    for f in funcs:
+        a = getattr(p, f)()
+        b = getattr(np, f)(p)
+        c = getattr(np, f)(p.x)
+        assert_(isinstance(a, np.ndarray) and not isinstance(a, process))
+        assert_(isinstance(b, np.ndarray) and not isinstance(b, process))
+        assert_allclose(a, c)
+        assert_allclose(b, c)
+
 
 # ----------------------------------------
 # test increments, derivative and integral

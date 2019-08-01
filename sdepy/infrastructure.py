@@ -289,7 +289,7 @@ class process(np.ndarray):
     A process is a subclass of numpy.ndarray, where its values as an array
     are the process values along the timeline and across paths. All
     numpy.ndarray methods, attributes and properties are guaranteed to act
-    upon such values, as would those of the parent class. Such no-overriding
+    upon such values, as would those of the parent class. Such no overriding
     commitment is intended to safeguard predictablity of array operations
     on process instances; process-specific functionalities are delegated
     to process-specific methods, attributes and properties.
@@ -464,30 +464,38 @@ class process(np.ndarray):
                         'timelines'.format(a.shape, self.shape))
         return out_array
 
-    def __array_wrap__(self, out_array, context):
-        ufunc, inputs, domain = context
-        assert hasattr(self, 't')
-        assert any(self is a for a in inputs)
+    def __array_wrap__(self, out_array, context=None):
+        if context is None:
+            # this may happen since numpy 1.16.0 when a process instance
+            # invokes a numpy.ndarray method (eg. sum, mean, etc.):
+            # in such case the resulting out_array is returned, as
+            # needed to comply with the no overriding commitment
+            # for numpy.ndarray methods
+            return out_array
+        else:
+            ufunc, inputs, domain = context
+            assert hasattr(self, 't')
+            assert any(self is a for a in inputs)
 
-        # get process inputs
-        p_inputs = [a for a in inputs
-                    if isinstance(a, process)]
+            # get process inputs
+            p_inputs = [a for a in inputs
+                        if isinstance(a, process)]
 
-        # ??? overcautious - to be eliminated
-        for a in p_inputs:
-            if not self._is_compatible(a):
-                assert False, 'this should never occur - '\
-                       '__array_prepare__ should enforce compatibility'
+            # ??? overcautious - to be eliminated
+            for a in p_inputs:
+                if not self._is_compatible(a):
+                    assert False, 'this should never occur - '\
+                           '__array_prepare__ should enforce compatibility'
 
-        # set t to the common non constant timeline
-        # or to the constant timeline of the first input
-        t = p_inputs[0].t
-        for a in p_inputs[1:]:
-            if len(a.t) > 1:
-                t = a.t
-                break
-        cls = type(self)
-        return cls(t=t, x=out_array)
+            # set t to the common non constant timeline
+            # or to the constant timeline of the first input
+            t = p_inputs[0].t
+            for a in p_inputs[1:]:
+                if len(a.t) > 1:
+                    t = a.t
+                    break
+            cls = type(self)
+            return cls(t=t, x=out_array)
 
     # -------------
     # interpolation
