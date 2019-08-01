@@ -289,7 +289,7 @@ class process(np.ndarray):
     A process is a subclass of numpy.ndarray, where its values as an array
     are the process values along the timeline and across paths. All
     numpy.ndarray methods, attributes and properties are guaranteed to act
-    upon such values, as would those of the parent class. Such no-overriding
+    upon such values, as would those of the parent class. Such no overriding
     commitment is intended to safeguard predictablity of array operations
     on process instances; process-specific functionalities are delegated
     to process-specific methods, attributes and properties.
@@ -464,30 +464,38 @@ class process(np.ndarray):
                         'timelines'.format(a.shape, self.shape))
         return out_array
 
-    def __array_wrap__(self, out_array, context):
-        ufunc, inputs, domain = context
-        assert hasattr(self, 't')
-        assert any(self is a for a in inputs)
+    def __array_wrap__(self, out_array, context=None):
+        if context is None:
+            # this may happen since numpy 1.16.0 when a process instance
+            # invokes a numpy.ndarray method (eg. sum, mean, etc.):
+            # in such case the resulting out_array is returned, as
+            # needed to comply with the no overriding commitment
+            # for numpy.ndarray methods
+            return out_array
+        else:
+            ufunc, inputs, domain = context
+            assert hasattr(self, 't')
+            assert any(self is a for a in inputs)
 
-        # get process inputs
-        p_inputs = [a for a in inputs
-                    if isinstance(a, process)]
+            # get process inputs
+            p_inputs = [a for a in inputs
+                        if isinstance(a, process)]
 
-        # ??? overcautious - to be eliminated
-        for a in p_inputs:
-            if not self._is_compatible(a):
-                assert False, 'this should never occur - '\
-                       '__array_prepare__ should enforce compatibility'
+            # ??? overcautious - to be eliminated
+            for a in p_inputs:
+                if not self._is_compatible(a):
+                    assert False, 'this should never occur - '\
+                           '__array_prepare__ should enforce compatibility'
 
-        # set t to the common non constant timeline
-        # or to the constant timeline of the first input
-        t = p_inputs[0].t
-        for a in p_inputs[1:]:
-            if len(a.t) > 1:
-                t = a.t
-                break
-        cls = type(self)
-        return cls(t=t, x=out_array)
+            # set t to the common non constant timeline
+            # or to the constant timeline of the first input
+            t = p_inputs[0].t
+            for a in p_inputs[1:]:
+                if len(a.t) > 1:
+                    t = a.t
+                    break
+            cls = type(self)
+            return cls(t=t, x=out_array)
 
     # -------------
     # interpolation
@@ -1095,14 +1103,14 @@ class process(np.ndarray):
 def piecewise(t=0., *, x=None, v=None, dtype=None, mode='mid'):
     """
     Return a process that interpolates to a piecewise constant function.
-    
+
     Parameters
     ----------
     t : array-like
         Reference timeline (see below).
     x : array-like, optional
         Values of the process along the timeline and across paths.
-        One and only one of ``x``, ``v``, must be provided, 
+        One and only one of ``x``, ``v``, must be provided,
         as a keyword argument.
     v : array-like, optional
         Values of a deterministic (one path) process along the timeline.
@@ -1113,22 +1121,22 @@ def piecewise(t=0., *, x=None, v=None, dtype=None, mode='mid'):
         to the reference timeline: 'mid', 'forward', 'backward'
         set ``t[i]`` to be the midpoint, start or end point respectively,
         of the constant segment with value ``x[i]`` or ``v[i]``.
-    
+
     See Also
     --------
     process
-    
+
     Notes
     -----
     Parameters ``t``, ``x``, ``v``, ``dtype`` conform to the ``process``
     instantiation interface and shape requirements.
-    
+
     The returned process ``p`` behaves as advertised upon interpolation
-    with default interpolation kind, and may be used 
-    as a time dependent piecewise constant parameter in SDE integration. 
-    However, its timeline ``p.t`` and values ``p.x`` 
-    are not guaranteed to coincide with the given ``t`` or ``x``, 
-    and should not be relied upon.    
+    with default interpolation kind, and may be used
+    as a time dependent piecewise constant parameter in SDE integration.
+    However, its timeline ``p.t`` and values ``p.x``
+    are not guaranteed to coincide with the given ``t`` or ``x``,
+    and should not be relied upon.
     """
     # delegate preprocessing of arguments to the process class
     p = process(t, x=x, v=v, dtype=dtype)
