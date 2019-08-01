@@ -605,6 +605,16 @@ def test_summary():
         b = np.cumsum(p, axis=0)
         assert_allclose(a, b, rtol=eps(p.dtype))
 
+    # numpy summary operations
+    for f in funcs:
+        a = getattr(p, f)()
+        b = getattr(np, f)(p)
+        c = getattr(np, f)(p.x)
+        assert_(isinstance(a, np.ndarray) and not isinstance(a, process))
+        assert_(isinstance(b, np.ndarray) and not isinstance(b, process))
+        assert_allclose(a, c)
+        assert_allclose(b, c)
+
 
 # ----------------------------------------
 # test increments, derivative and integral
@@ -714,7 +724,7 @@ def test_piecewise():
         p = piecewise((1, 2), v=(10, 20), mode='zzz')
     with assert_warns(DeprecationWarning):
         p = _piecewise_constant_process((1, 2), v=(10, 20))
-        
+
 
 # case testing
 def tst_piecewise(dtype, paths, vshape, mode, shift):
@@ -728,7 +738,7 @@ def tst_piecewise(dtype, paths, vshape, mode, shift):
     else:
         x = xx = 1 + np.random.random((3,) + vshape + (paths,)).astype(dtype)
         vv = None
-        
+
     if mode is None:
         p = piecewise(t, x=xx, v=vv)  # default mode is 'mid'
     else:
