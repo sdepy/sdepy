@@ -796,7 +796,8 @@ class process(np.ndarray):
         the minimum process value attained across paths.
         """
         return process(t=self.t,
-                       v=self.min(axis=-1, out=out))
+                       x=self.min(axis=-1, out=out,
+                                  keepdims=True))
 
     def pmax(self, out=None):
         """
@@ -804,7 +805,8 @@ class process(np.ndarray):
         the maximum process value attained across paths.
         """
         return process(t=self.t,
-                       v=self.max(axis=-1, out=out))
+                       x=self.max(axis=-1, out=out,
+                                  keepdims=True))
 
     def psum(self, dtype=None, out=None):
         """
@@ -855,14 +857,16 @@ class process(np.ndarray):
         process value attained along time.
         """
         return process(t=self.t[:1],
-                       x=self.min(axis=0, out=out)[np.newaxis, ...])
+                       x=self.min(axis=0, out=out,
+                                  keepdims=True))
 
     def tmax(self, out=None):
         """Constant process exposing for each path the maximum
         process value attained along time.
         """
         return process(t=self.t[:1],
-                       x=self.max(axis=0, out=out)[np.newaxis, ...])
+                       x=self.max(axis=0, out=out,
+                                  keepdims=True))
 
     def tsum(self, dtype=None, out=None):
         """

@@ -582,28 +582,63 @@ def test_summary():
 
     # summary across paths
     for f in funcs:
+        # test values
         a = getattr(p, 'p' + f)()
-        b = getattr(np, f)(p, axis=-1)
-        assert_allclose(a, b[..., np.newaxis], rtol=eps(p.dtype))
-        a = p.pmean(dtype=np.float32)
+        b = getattr(np, f)(p, axis=-1)[..., np.newaxis]
+        assert_allclose(a, b, rtol=eps(p.dtype))
+        # test out parameter
+        y = np.full((3, 5, 7, 1), np.nan)
+        a = getattr(p, 'p' + f)(out=y)
+        assert_(a.base is y)
+        assert_allclose(y, b, rtol=eps(p.dtype))
+    for f in ('sum', 'mean', 'var', 'std'):
+        # test dtype parameter
+        a = getattr(p, 'p' + f)(dtype=np.float32)
         assert_(a.dtype == np.float32)
-        b = p.pvar(ddof=1, out=a)
-        assert_allclose(b, p.var(ddof=1, axis=-1)[..., np.newaxis],
-                        rtol=eps(np.float32))
+    # test ddof parameter for pvar and pstd
+    a = p.pvar(ddof=1)
+    assert_allclose(a, p.var(ddof=1, axis=-1)[..., np.newaxis],
+                    rtol=eps(p.dtype))
+    a = p.pstd(ddof=1)
+    assert_allclose(a, p.std(ddof=1, axis=-1)[..., np.newaxis],
+                    rtol=eps(p.dtype))
 
     # summary along the timeline
     for f in funcs:
+        # test values
         a = getattr(p, 't' + f)()
-        b = getattr(np, f)(p, axis=0)
-        assert_allclose(a, b[np.newaxis, ...], rtol=eps(p.dtype))
-        a = p.tmean(dtype=np.float32)
-        assert_(a.dtype == np.float32)
-        b = p.tvar(ddof=1, out=a)
-        assert_allclose(b, p.var(ddof=1, axis=0)[np.newaxis, ...],
-                        rtol=eps(np.float32))
-        a = p.tcumsum()
-        b = np.cumsum(p, axis=0)
+        b = getattr(np, f)(p, axis=0)[np.newaxis, ...]
         assert_allclose(a, b, rtol=eps(p.dtype))
+        # test out parameter
+        y = np.full((1, 5, 7, 11), np.nan)
+        a = getattr(p, 't' + f)(out=y)
+        assert_(a.base is y)
+        assert_allclose(y, b, rtol=eps(p.dtype))
+    for f in ('sum', 'mean', 'var', 'std'):
+        # test dtype parameter
+        a = getattr(p, 't' + f)(dtype=np.float32)
+        assert_(a.dtype == np.float32)
+
+    # test ddof parameter for tvar and tstd
+    a = p.tvar(ddof=1)
+    assert_allclose(a, p.var(ddof=1, axis=0)[np.newaxis, ...],
+                    rtol=eps(p.dtype))
+    a = p.tstd(ddof=1)
+    assert_allclose(a, p.std(ddof=1, axis=0)[np.newaxis, ...],
+                    rtol=eps(p.dtype))
+
+    # test tcumsum values
+    a = p.tcumsum()
+    b = np.cumsum(p, axis=0)
+    assert_allclose(a, b, rtol=3*eps(p.dtype))
+    # test tcumsum out parameter
+    y = np.full((3, 5, 7, 11), np.nan)
+    a = p.tcumsum(out=y)
+    assert_(a.base is y)
+    assert_allclose(y, b, rtol=3*eps(p.dtype))
+    # test tcumsum dtype parameter
+    a = p.tcumsum(dtype=np.float32)
+    assert_(a.dtype == np.float32)
 
     # numpy summary operations
     for f in funcs:
