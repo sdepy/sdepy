@@ -262,7 +262,7 @@ class process(np.ndarray):
     ----------
     t : array-like
         Timeline of the process, as a one dimensional array
-        with shape (N,), in increasing order.
+        with shape ``(N,)``, in increasing order.
         Defaults to 0.
     x : array-like, optional
         Values of the process along the timeline and across paths.
@@ -334,8 +334,12 @@ class process(np.ndarray):
         Stores the timeline of the process.
     interp_kind : str
         Stores the default interpolation kind, passed upon interpolation
-        (``interp`` and ``__call__`` methods) to scipy.interpolate.interp1d
-        unless a specific kind is provided. Defaults to 'linear'.
+        (``interp`` and ``__call__`` methods) to ``scipy.interpolate.interp1d``
+        unless a specific kind is provided. Defaults to the class attribute
+        of the same name, initialized to ``'linear'``.
+        Note that ufuncs and methods, when returning new processes, do *not*
+        preserve the ``interp_kind`` attribute, which falls back on the
+        class default and should be set explicitly again if needed.
 
     Methods
     -------
@@ -357,13 +361,20 @@ class process(np.ndarray):
     pvar
     pstd
 
+    vmin
+    vmax
+    vsum
+    vmean
+    vvar
+    vstd
+
     tmin
     tmax
     tsum
     tmean
     tvar
-
     tstd
+
     tdiff
     tder
     tint
@@ -513,10 +524,10 @@ class process(np.ndarray):
 
         Parameters
         ----------
-        kind : string
+        kind : string, optional
             An interpolation kind as accepted by
             ``scipy.interpolate.interp1d``. If None, defaults to
-            the ``interp_kind`` class attribute.
+            the ``interp_kind`` attribute.
 
         Returns
         -------
@@ -848,8 +859,77 @@ class process(np.ndarray):
                        x=self.std(axis=-1, dtype=dtype, out=out,
                                   ddof=ddof, keepdims=True))
 
-    # summary operations along paths
-    # ------------------------------
+    # summary operations across values
+    # --------------------------------
+
+    def vmin(self, out=None):
+        """
+        Process exposing for each time point and path
+        the minimum of process values.
+        """
+        return process(
+            t=self.t,
+            x=self.min(axis=tuple(range(1, len(self.vshape) + 1)),
+                       out=out),
+        )
+
+    def vmax(self, out=None):
+        """
+        Process exposing for each time point and path
+        the maximum of process values.
+        """
+        return process(
+            t=self.t,
+            x=self.max(axis=tuple(range(1, len(self.vshape) + 1)),
+                       out=out),
+        )
+
+    def vsum(self, dtype=None, out=None):
+        """
+        Process exposing for each time point and path
+        the sum of process values.
+        """
+        return process(
+            t=self.t,
+            x=self.sum(axis=tuple(range(1, len(self.vshape) + 1)),
+                       dtype=dtype, out=out),
+        )
+
+    def vmean(self, dtype=None, out=None):
+        """
+        Process exposing for each time point and path
+        the mean of process values.
+        """
+        return process(
+            t=self.t,
+            x=self.mean(axis=tuple(range(1, len(self.vshape) + 1)),
+                        dtype=dtype, out=out),
+        )
+
+    def vvar(self, dtype=None, out=None, ddof=0):
+        """
+        Process exposing for each time point and path
+        the variance of process values.
+        """
+        return process(
+            t=self.t,
+            x=self.var(axis=tuple(range(1, len(self.vshape) + 1)),
+                       dtype=dtype, out=out, ddof=ddof),
+        )
+
+    def vstd(self, dtype=None, out=None, ddof=0):
+        """
+        Process exposing for each time point and path
+        the standard deviation of process values.
+        """
+        return process(
+            t=self.t,
+            x=self.std(axis=tuple(range(1, len(self.vshape) + 1)),
+                       dtype=dtype, out=out, ddof=ddof),
+        )
+
+    # summary operations along the timeline
+    # -------------------------------------
 
     def tmin(self, out=None):
         """
@@ -1136,7 +1216,8 @@ def piecewise(t=0., *, x=None, v=None, dtype=None, mode='mid'):
     instantiation interface and shape requirements.
 
     The returned process ``p`` behaves as advertised upon interpolation
-    with default interpolation kind, and may be used
+    with default interpolation kind (set to ``'nearest'``
+    via the ``interp_kind`` attribute), and may be used
     as a time dependent piecewise constant parameter in SDE integration.
     However, its timeline ``p.t`` and values ``p.x``
     are not guaranteed to coincide with the given ``t`` or ``x``,
@@ -1173,7 +1254,7 @@ def piecewise(t=0., *, x=None, v=None, dtype=None, mode='mid'):
 
 # safeguard backward compatibility
 def _piecewise_constant_process(*args, **kwds):
-    """private alias of piecewise_constant_process
+    """private alias of sdepy.piecewise
     (unused, deprecated)"""
 
     warnings.warn('call to sdepy.infrastructure._piecewise_constant_process, '
