@@ -83,6 +83,14 @@ def process_constructor(t, paths, vshape, dtype):
     # only zero or one dimensional timeline
     assert_raises(ValueError, process, tt[np.newaxis, np.newaxis], x=x)
 
+    # test interp_kind attribute
+    assert_(process.interp_kind == 'linear')
+    assert_(p.interp_kind == 'linear')
+    p = process((1., 2.), v=(10., 20.))
+    assert_allclose(p(1.2), np.array([12.]), rtol=eps(float))
+    p.interp_kind = 'nearest'
+    assert_allclose(p(1.2), p[0], rtol=eps(float))
+
 
 # -----------------
 # test broadcasting
@@ -603,6 +611,29 @@ def test_summary():
     assert_allclose(a, p.std(ddof=1, axis=-1)[..., np.newaxis],
                     rtol=eps(p.dtype))
 
+    # summary across values
+    for f in funcs:
+        # test values
+        a = getattr(p, 'v' + f)()
+        b = getattr(np, f)(p, axis=(1, 2))
+        assert_allclose(a, b, rtol=eps(p.dtype))
+        # test out parameter
+        y = np.full((3, 11), np.nan)
+        a = getattr(p, 'v' + f)(out=y)
+        assert_(a.base is y)
+        assert_allclose(b, y, rtol=eps(p.dtype))
+    for f in ('sum', 'mean', 'var', 'std'):
+        # test dtype parameter
+        a = getattr(p, 'v' + f)(dtype=np.float32)
+        assert_(a.dtype == np.float32)
+    # test ddof parameter for pvar and pstd
+    a = p.vvar(ddof=1)
+    assert_allclose(a, p.var(ddof=1, axis=(1, 2)),
+                    rtol=eps(p.dtype))
+    a = p.vstd(ddof=1)
+    assert_allclose(a, p.std(ddof=1, axis=(1, 2)),
+                    rtol=eps(p.dtype))
+
     # summary along the timeline
     for f in funcs:
         # test values
@@ -618,7 +649,6 @@ def test_summary():
         # test dtype parameter
         a = getattr(p, 't' + f)(dtype=np.float32)
         assert_(a.dtype == np.float32)
-
     # test ddof parameter for tvar and tstd
     a = p.tvar(ddof=1)
     assert_allclose(a, p.var(ddof=1, axis=0)[np.newaxis, ...],
@@ -740,7 +770,7 @@ def process_chf_cdf(t, s, u, paths, vshape):
 
 
 # -------------------------------
-# test piecewise_constant_process
+# test piecewise constant process
 # -------------------------------
 
 # enumerate test cases and launch tests
@@ -803,3 +833,39 @@ def tst_piecewise(dtype, paths, vshape, mode, shift):
     # test degenerate case of single time point
     q = piecewise(t=0., x=x[:1])
     assert_allclose(q((-3, 0, 3)), np.stack((x[0], x[0], x[0])))
+
+
+# ---------------------------
+# test no override commitment
+# ---------------------------
+
+def get_override(subclass, parent):
+    """Return set of attributes and methods of parent
+    overridden by subclass"""
+    assert_(issubclass(subclass, parent))
+    return set(vars(parent)).intersection(vars(subclass))
+
+
+def test_no_override():
+
+    allowed = {
+        '__doc__',
+        '__new__',
+        '__array_finalize__',
+        '__getitem__',
+        '__array_prepare__',
+        '__array_priority__',
+        '__array_wrap__',
+    }
+
+    # sdepy.process should not override any numpy.ndarray
+    # method other than those listed above
+    assert_(get_override(process, np.ndarray) == allowed)
+
+    # validate test
+    class failing(process):
+
+        def sum(self, *args):
+            pass
+
+    assert_('sum' in get_override(failing, np.ndarray))
