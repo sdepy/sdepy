@@ -90,6 +90,7 @@ def quant(test):
     test.quant = True
     return test
 
+
 slow = dec.slow
 
 
@@ -127,6 +128,7 @@ class const_errors:
 
     def __setitem__(self, key, value):
         pass
+
 
 noerrors_expected = const_errors(1000)
 noerrors_realized = const_errors(0)
