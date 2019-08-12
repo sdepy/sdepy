@@ -1,6 +1,5 @@
 import numpy as np
 import scipy
-import matplotlib.pyplot as plt
 import warnings
 import cProfile
 import pstats
@@ -13,26 +12,18 @@ import importlib
 import doctest
 from numpy.testing import rundocs
 
-# warnings.filterwarnings('error')
-# warnings.filterwarnings('always')
-# warnings.filterwarnings('default')
+try:
+    import matplotlib.pyplot as plt
+except Exception:
+    pass
 
 # import from local package
 import sdepy
 from sdepy import *
+import runtests
+from runtests import *
 
-# check which target is being tested
-DIR = os.path.split(sdepy.__file__)[0]
-print(DIR)
-
-# setup the tester
-test = sdepy.test
-
-
-# --------------------------------------------
 # import statements for running tests manually
-# --------------------------------------------
-
 from sdepy.tests.test_process import *
 from sdepy.tests.test_quant import *
 from sdepy.tests.test_processes import *
@@ -42,14 +33,20 @@ from sdepy.tests.test_analytical import *
 from sdepy.tests.test_source import *
 from sdepy.tests.test_kfunc import *
 
+# check which target is being tested
+runtests.print_info()
 
-# -----------
-# other tools
-# -----------
+# setup the tester
+test = sdepy.test
 
-def profile(f):
+
+# -----
+# tools
+# -----
+
+def profile(f, show=10):
     """
-    profiling helper
+    Profiling helper
     """
     pr = cProfile.Profile()
 
@@ -60,16 +57,14 @@ def profile(f):
     ps = pstats.Stats(pr)
     ps = ps.strip_dirs().sort_stats('tottime')
 
-    ps.print_stats(10)
+    ps.print_stats(show)
     return ps
 
 
-def pl(x):
-    for a in x:
-        print(a)
-
-
 def corr(a, b=None):
+    """
+    Correlation matrix
+    """
     if b is None:
         a, b = a[0], a[1]
     cov = np.cov(a, b)
@@ -80,12 +75,17 @@ def corr(a, b=None):
 
 
 def getcode(in_, out, mode='x'):
+    """
+    Parse doc file named 'in_', trasform doctests
+    into executable code and all the rest into
+    comments, and save output in file named 'out'
+    """
     header = \
-'''# ------------------------------------------
-# This file has been automatically generated
-# from {}
-# ------------------------------------------
-'''.format(in_)
+        '# ------------------------------------------\n'\
+        '# This file has been automatically generated\n'\
+        '# from {}                                   \n'\
+        '# ------------------------------------------\n'\
+        .format(in_)
 
     with open(in_) as i, open(out, mode) as o:
         print(header, file=o)
@@ -104,18 +104,21 @@ def getcode(in_, out, mode='x'):
 
 
 def quickguide_make():
+    """
+    Generate ./quickguide.py from ./doc/quickguide.rst
+    """
     getcode(os.path.join('.', 'doc', 'quickguide.rst'),
             'quickguide.py',
             mode='w')
 
 
-def quickguide_run():
-    quickguide_make()
-    os.system('python quickguide.py')
-
-
-def quickguide_doctests():
-    return doctest.testfile(
-        os.path.join('.', 'doc', 'quickguide.rst'),
-        module_relative=False
-        ).failed
+def inspect_warnings():
+    """
+    Execute all tests in sdepy.tests module,
+    printing warnings if any.
+    """
+    warnings.filterwarnings('default')
+    for key, item in globals().items():
+        if key[:5] == 'test_':
+            print('\nrunning', key)
+            item()
