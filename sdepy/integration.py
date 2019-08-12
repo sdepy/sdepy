@@ -1784,7 +1784,7 @@ def _SDE_from_function(f, q=None, sources=None, log=False, addaxis=False):
         try:
             try:
                 test_val = f(np.array(1.), np.array(1.))
-            except:
+            except Exception:
                 test_val = f()
             if isinstance(test_val, (tuple, list, np.ndarray)):
                 neq = len(test_val)
@@ -1798,7 +1798,7 @@ def _SDE_from_function(f, q=None, sources=None, log=False, addaxis=False):
             ids = set()
             for z in test_val:
                 ids.update(z.keys())
-        except:
+        except Exception:
             raise TypeError(
                 'test evaluation of {} at t=1., x=1. failed - '
                 'it is recommended to provide valid defaults '

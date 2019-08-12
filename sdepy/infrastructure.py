@@ -58,7 +58,7 @@ def _variable_param_setup(z):
             x = z(test_t)
             isarray = isinstance(x, np.ndarray)
             shape = np.asarray(x).shape
-        except:
+        except Exception:
             # if evaluation fails, ignore
             # and let events unfold later
             isarray = False
@@ -2400,9 +2400,9 @@ dw, source of standard Wiener process (brownian motion) increments with memory.
             a, b = (s - t1), (t2 - s)
             A, B = corr((t1+s)/2)*a, corr((s+t2)/2)*b
             Z = B @ np.linalg.inv(A + B)
-            I = np.eye(A.shape[0])
+            Id = np.eye(A.shape[0])
             dw.corr = (Z @ A)*np.sign(a)
-            ws = self._mult(Z, w1) + self._mult((I - Z), w2) + dw(0, 1)
+            ws = self._mult(Z, w1) + self._mult((Id - Z), w2) + dw(0, 1)
         else:
             a, b = (s - t1), (t2 - s)
             z = b/(a + b)

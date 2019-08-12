@@ -19,6 +19,7 @@ def test_aaa_config():
         print('VERBOSE, QUANT_TEST_MODE =',
               VERBOSE, QUANT_TEST_MODE)
 
+
 test_aaa_config.config = True
 
 
@@ -119,7 +120,7 @@ def test_kfunc():
     # ------------------------------------------------------
     def F_check(f: 'F instance',
                 aa: 'expected a', bb: 'expected b',
-                ii: 'info'=None):
+                ii: 'info' = None):
 
         # check args and attributes
         assert_(f.a == aa and f.b == bb)

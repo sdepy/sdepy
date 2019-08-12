@@ -23,6 +23,7 @@ def test_aaa_config():
         print('VERBOSE, QUANT_TEST_MODE =',
               VERBOSE, QUANT_TEST_MODE)
 
+
 test_aaa_config.config = True
 
 
