@@ -1,6 +1,6 @@
 # ------------------------------------------
 # This file has been automatically generated
-# from .\doc\quickguide.rst
+# from .\doc\quickguide.rst                                   
 # ------------------------------------------
 
 # ===========
@@ -113,7 +113,7 @@ x.shape
 
 # (101, 3, 10000)
 gr = plt.plot(timeline, x[:, 0, :4])  # inspect a few paths
-plt.show(gr) # doctest: +SKIP
+plt.show()  # doctest: +SKIP
 
 
 #

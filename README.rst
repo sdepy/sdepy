@@ -31,20 +31,20 @@ Start here
 ----------
 
 -  `Installation           <https://pypi.org/project/sdepy>`_: ``pip install sdepy``
--  `Quick Guide            <https://sdepy.readthedocs.io/en/v1.0.1/intro.html#id2>`_
-   (as `code               <https://github.com/sdepy/sdepy/blob/v1.0.1/quickguide.py>`_)
--  `Documentation          <https://sdepy.readthedocs.io/en/v1.0.1>`_
-   (as `pdf                <https://readthedocs.org/projects/sdepy/downloads/pdf/v1.0.1>`_)
+-  `Quick Guide            <https://sdepy.readthedocs.io/en/v1.1.0/intro.html#id2>`_
+   (as `code               <https://github.com/sdepy/sdepy/blob/v1.1.0/quickguide.py>`_)
+-  `Documentation          <https://sdepy.readthedocs.io/en/v1.1.0>`_
+   (as `pdf                <https://readthedocs.org/projects/sdepy/downloads/pdf/v1.1.0>`_)
 -  `Source                 <https://github.com/sdepy/sdepy>`_
--  `License                <https://github.com/sdepy/sdepy/blob/v1.0.1/LICENSE.txt>`_
+-  `License                <https://github.com/sdepy/sdepy/blob/v1.1.0/LICENSE.txt>`_
 -  `Bug Reports            <https://github.com/sdepy/sdepy/issues>`_
 
 
-.. |readthedocs| image:: https://readthedocs.org/projects/sdepy/badge/?version=v1.0.1
-   :target: https://sdepy.readthedocs.io/en/v1.0.1
+.. |readthedocs| image:: https://readthedocs.org/projects/sdepy/badge/?version=v1.1.0
+   :target: https://sdepy.readthedocs.io/en/v1.1.0
    :alt: Documentation Status
-   
-.. |travis| image:: https://travis-ci.org/sdepy/sdepy.svg?branch=v1.0.1
+
+.. |travis| image:: https://travis-ci.org/sdepy/sdepy.svg?branch=v1.1.0
     :target: https://travis-ci.org/sdepy/sdepy
 
 .. |codecov| image:: https://codecov.io/gh/sdepy/sdepy/branch/master/graph/badge.svg
