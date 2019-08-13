@@ -94,7 +94,7 @@ It is best explained by examples:
     >>> x.shape
     (101, 3, 10000)
     >>> gr = plt.plot(timeline, x[:, 0, :4])  # inspect a few paths
-    >>> plt.show(gr) # doctest: +SKIP
+    >>> plt.show()  # doctest: +SKIP
 
 
 4. A scalar process with **path-dependent initial conditions and parameters**,
@@ -149,7 +149,7 @@ It is best explained by examples:
    If more integrations steps are needed between points in the output timeline,
    use ``steps`` to keep the integration timeline consistent with the one
    of ``my_dw``:
-   
+
     >>> x = p(coarse_timeline, steps=timeline)
     >>> x.shape
     (5, 3, 10000)
@@ -432,7 +432,7 @@ make a difference here)::
     ...             i0=-1)(timeline=tgrid)
 
 Computation of the green function and of the solution ``u(x, t1)``
-(note the liberal use of ``scipy.integrate.quad`` below, enabled by 
+(note the liberal use of ``scipy.integrate.quad`` below, enabled by
 the smoothness of the Gaussian kernel estimate ``a[i, j].pdf``)::
 
     >>> a = montecarlo(xp, bins=100)
