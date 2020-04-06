@@ -12,7 +12,7 @@ from sdepy import _config
 from sys import version as python_version
 from numpy import __version__ as numpy_version
 from scipy import __version__ as scipy_version
-from nose import __version__ as nose_version
+from pytest import __version__ as pytest_version
 
 
 # -------------------
@@ -51,7 +51,7 @@ def print_info():
     print('python version =', python_version)
     print('numpy version = ', numpy_version)
     print('scipy version = ', scipy_version)
-    print('nose version =  ', nose_version, '\n')
+    print('pytest version =  ', pytest_version, '\n')
     return 0
 
 
@@ -141,24 +141,25 @@ def run_quickguide_py():
         'quickguide',
         os.path.join(HOME_DIR, 'quickguide.py'))
     quickguide = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(quickguide)
-    return 0
+    try:
+        spec.loader.exec_module(quickguide)
+        return 0
+    except Exception:
+        return 1
 
 
 def run_fast():
     """
     Run fast tests
     """
-    res = test()
-    return len(res.errors + res.failures)
+    return int(not test())
 
 
 def run_full():
     """
     Run full tests including tests marked 'slow' and doctests
     """
-    res = test('full', doctests=True)
-    return len(res.errors + res.failures)
+    return int(not test('full', doctests=True))
 
 
 def run_insane():
@@ -171,7 +172,7 @@ def run_insane():
     res = []
 
     def run_tests(*var, **args):
-        res.append(test(*var, **args))
+        res.append(int(not test(*var, **args)))
 
     print('------------------')
     print('RUNNING FULL TESTS')
@@ -205,14 +206,13 @@ def run_insane():
     run_tests('quant or config')
 
     # summarize results
-    count_errors = sum(len(x.errors) for x in res)
-    count_failures = sum(len(x.failures) for x in res)
+    count_failures = sum(res)
 
     print('\n--------------------')
     print('FULL TESTS COMPLETED')
     print('--------------------\n')
 
-    return count_errors + count_failures + res_quickguide
+    return count_failures + res_quickguide
 
 
 # --------------------------------------

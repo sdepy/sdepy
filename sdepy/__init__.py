@@ -97,8 +97,8 @@ from .analytical import *
 from .kfun import *
 from .shortcuts import *
 
-import numpy.testing
-test = numpy.testing.Tester().test
+from .tests.shared import _pytest_tester
+test = _pytest_tester(__name__)
 
 __version__ = '1.1.1-dev'
 
