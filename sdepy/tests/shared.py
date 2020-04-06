@@ -5,15 +5,48 @@ COMMON TESTING INFRASTRUCTURE
 """
 # common imports
 import numpy as np
+import pytest
 from numpy.testing import (
     assert_, assert_raises, assert_warns,
     assert_array_equal, assert_allclose,
-    dec
     )
 import itertools
 import os
 import sys
 import warnings
+
+
+# -------------
+# pytest tester
+# -------------
+
+class _pytest_tester:
+    """Tester class invoking pytest.main()"""
+
+    def __init__(self, module_name):
+        self.module_name = module_name
+
+    def __call__(self, label='fast', doctests=False, pytest_args=()):
+        module_path = os.path.abspath(
+            sys.modules[self.module_name].__path__[0])
+        ini_file = os.path.join(module_path, 'tests', '_pytest.ini')
+
+        label = {
+            'fast': 'not slow',
+            'full': None
+            }.get(label, label)
+
+        pytest_args = (
+            list(pytest_args) +
+            ['-vvv', '--capture=no'] +
+            ['-c', ini_file] +
+            (['-m', label] if label else []) +
+            (['--doctest-modules'] if doctests else []) +
+            ['--pyargs', self.module_name]
+            )
+
+        test_result = pytest.main(pytest_args)
+        return (test_result == 0)
 
 
 # ----------------------------
@@ -83,15 +116,11 @@ PATHS_LD = 100
 # functions for common tasks
 # --------------------------
 
-def quant(test):
-    """Decorator to mark test as quantitative,
-    setting the attribute test.quant = True
-    """
-    test.quant = True
-    return test
+# Decorator to mark test as quantitative
+quant = pytest.mark.quant
 
-
-slow = dec.slow
+# Decorator to mark test as slow
+slow = pytest.mark.slow
 
 
 def do(testing_function, *case_iterators, **args):
@@ -104,7 +133,7 @@ def do(testing_function, *case_iterators, **args):
 
     for case in itertools.product(*case_iterators):
         testing_function(*case, **args)
-        print('.', sep='', end='', file=sys.stderr)
+        print('.', sep='', end='')
 
 
 def eps(dtype):

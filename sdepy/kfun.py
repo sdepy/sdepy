@@ -289,12 +289,13 @@ def kfunc(f=None, *, nvar=None):
     --------
     Wrap ``wiener_source`` into a kfunc, named ``dw``:
 
+        >>> import numpy
         >>> from sdepy import wiener_source, kfunc
         >>> dw = kfunc(wiener_source)
 
     Instantiate ``dw`` and evaluate it (this is business as usual):
 
-        >>> my_instance = dw(paths=100, dtype=np.float32)
+        >>> my_instance = dw(paths=100, dtype=numpy.float32)
         >>> x = my_instance(t=0, dt=1)
         >>> x.shape, x.dtype
         ((100,), dtype('float32'))
@@ -329,14 +330,14 @@ def kfunc(f=None, *, nvar=None):
     Instantiate and evaluate at once (pass one or more variables
     to the class constructor):
 
-        >>> x = dw(0, 1, paths=100, dtype=np.float32)
+        >>> x = dw(0, 1, paths=100, dtype=numpy.float32)
         >>> x.shape, x.dtype
         ((100,), dtype('float32'))
 
     As long as variables are passed by name, order doesn't
     matter (omitted variables take default values, if any):
 
-        >>> x = dw(paths=100, dtype=np.float32, dt=1, t=0)
+        >>> x = dw(paths=100, dtype=numpy.float32, dt=1, t=0)
         >>> x.shape, x.dtype
         ((100,), dtype('float32'))
     """

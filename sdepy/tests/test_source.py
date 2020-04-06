@@ -317,11 +317,11 @@ def test_source_true_wiener():
                         assert_allclose(c[0, 1], irho(s, t0),
                                         rtol=0.02, atol=0.01)
                         assert_allclose(v, abs(s - t0), rtol=0.02, atol=0.01)
-                        print('.', sep='', end='', file=sys.stderr)
+                        print('.', sep='', end='')
                 for s1, s2 in ((4, 6), (2, 6), (2, 4),
                                (-4, -6), (-2, -6), (-2, -4)):
                     c = corr((tw(s2) - tw(s1))[i][0], tw(s1)[i][0])
                     v = np.var((tw(s2) - tw(s1))[i][0])
                     assert_allclose(c[0, 1], 0, rtol=0.02, atol=0.01)
                     assert_allclose(v, abs(s2 - s1), rtol=0.02, atol=0.01)
-                    print('.', sep='', end='', file=sys.stderr)
+                    print('.', sep='', end='')

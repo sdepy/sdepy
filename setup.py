@@ -46,12 +46,13 @@ if __name__ == '__main__':
             ],
         test_suite='nose.collector',
         python_requires='>=3.5',
-        install_requires=['numpy>=1.11.3', 'scipy>=0.18.1', 'nose>=1.3.7'],
+        install_requires=['numpy>=1.11.3', 'scipy>=0.18.1'],
         packages=[
             'sdepy',
             'sdepy.tests',
             ],
         package_data={'sdepy': [
+            'tests/pytest.ini',
             'tests/cfr/*err_expected.txt',
             ]}
         )
