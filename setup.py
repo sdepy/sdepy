@@ -46,7 +46,7 @@ if __name__ == '__main__':
             ],
         test_suite='nose.collector',
         python_requires='>=3.5',
-        install_requires=['numpy>=1.11.3', 'scipy>=0.18.1'],
+        install_requires=['numpy>=1.15.2', 'scipy>=0.19.1'],
         packages=[
             'sdepy',
             'sdepy.tests',
