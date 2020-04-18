@@ -38,7 +38,7 @@ class _pytest_tester:
 
         pytest_args = (
             list(pytest_args) +
-            ['-vvv', '--capture=no'] +
+            ['--verbose', '--capture=no'] +
             ['-c', ini_file] +
             (['-m', label] if label else []) +
             (['--doctest-modules'] if doctests else []) +

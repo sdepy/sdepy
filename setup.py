@@ -52,7 +52,7 @@ if __name__ == '__main__':
             'sdepy.tests',
             ],
         package_data={'sdepy': [
-            'tests/pytest.ini',
+            'tests/_pytest.ini',
             'tests/cfr/*err_expected.txt',
             ]}
         )
