@@ -22,7 +22,7 @@ matrix:
     # python 3.6, latest versions of other dependencies, fast tests
     - python: 3.6
       before_install:
-        - pip install numpy>=1.16 scipy>=1.2 pytest>=3.8
+        - pip install numpy>=1.16.2 scipy>=1.2.1 pytest>=3.8.1
       script:
         - python runtests.py 'setup_tests()'
         - pushd ./build/tests
@@ -35,7 +35,7 @@ matrix:
       dist: xenial  # see travis-ci/travis-ci/issues/9815
       sudo: true
       before_install:
-        - pip install numpy>=1.16 scipy>=1.2 pytest>=3.8
+        - pip install numpy>=1.16.2 scipy>=1.2.1 pytest>=3.8.1
         # - pip install matplotlib>=2.1.0  # needed for quickguide doctests
         - pip install coverage>=4.5.1 codecov>=2.0.15
       script:

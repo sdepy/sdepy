@@ -44,7 +44,6 @@ if __name__ == '__main__':
             'Mac OS-X',
             'Unix',
             ],
-        test_suite='nose.collector',
         python_requires='>=3.5',
         install_requires=['numpy>=1.15.2', 'scipy>=0.19.1'],
         packages=[
