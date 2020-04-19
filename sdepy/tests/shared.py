@@ -5,7 +5,6 @@ COMMON TESTING INFRASTRUCTURE
 """
 # common imports
 import numpy as np
-import pytest
 from numpy.testing import (
     assert_, assert_raises, assert_warns,
     assert_array_equal, assert_allclose,
@@ -14,6 +13,11 @@ import itertools
 import os
 import sys
 import warnings
+try:
+    import pytest
+    PYTEST = True
+except ImportError:
+    PYTEST = False
 
 
 # -------------
@@ -27,6 +31,27 @@ class _pytest_tester:
         self.module_name = module_name
 
     def __call__(self, label='fast', doctests=False, pytest_args=()):
+        """
+        Invoke the sdepy testing suite (requires pytest>=3.8.1
+        to be installed).
+
+        Parameters
+        ----------
+        label : string, optional
+            Sets the scope of tests. May be one of ``'full'`` (run all tests),
+            ``'fast'`` (avoid slow tests), ``'slow'`` (perform slow tests
+            only), ``'quant'`` (perform quantitative tests only).
+        doctests : bool, optional
+            If ``True``, doctests are performed in addition to the tests
+            specified by ``label``.
+        pytest_args : iterable of strings, optional
+            Additional arguments passed to ``pytest.main()``.
+
+        Returns
+        -------
+        ``True`` if all tests passed, ``False`` otherwise.
+        """
+
         module_path = os.path.abspath(
             sys.modules[self.module_name].__path__[0])
         ini_file = os.path.join(module_path, 'tests', '_pytest.ini')
@@ -45,8 +70,12 @@ class _pytest_tester:
             ['--pyargs', self.module_name]
             )
 
-        test_result = pytest.main(pytest_args)
-        return (test_result == 0)
+        if PYTEST:
+            test_result = pytest.main(pytest_args)
+            return (test_result == 0)
+        else:
+            raise ImportError(
+                'sdepy.test() requires pytest to be installed')
 
 
 # ----------------------------
@@ -116,11 +145,14 @@ PATHS_LD = 100
 # functions for common tasks
 # --------------------------
 
-# Decorator to mark test as quantitative
-quant = pytest.mark.quant
-
-# Decorator to mark test as slow
-slow = pytest.mark.slow
+if PYTEST:
+    # Decorator to mark test as quantitative
+    quant = pytest.mark.quant
+    # Decorator to mark test as slow
+    slow = pytest.mark.slow
+else:
+    # dummy decorators in case pytest is not installed
+    quant = slow = lambda f: f
 
 
 def do(testing_function, *case_iterators, **args):
