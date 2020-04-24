@@ -714,7 +714,7 @@ class integrator(paths_generator):
         x = xw[0]
         # compute A, dZ and make them available as attributes
         A, dZ = self.A(s, x), self.dZ(s, ds)
-        xw[1][...] = x + sum(A[id]*dZ[id] for id in A.keys())
+        xw[1][...] = x + sum(A.get(id, 0)*dZ[id] for id in A.keys())
 
         if self.getinfo:
             iv.update(last_t=s, last_dt=ds,
@@ -1186,13 +1186,29 @@ class SDE:
     # algorithm of the integrator class
     # -----------------------------------
 
+    def _check_sde_values(self, A):
+        if not isinstance(A, dict):
+            raise TypeError(
+                'invalid {} return values: a dict, not a {} object expected'
+                .format(self.sde, type(A))
+                )
+        if not set(A.keys()).issubset(self.sources):
+            raise KeyError(
+                'invalid {} return values: {} entries expected (one per '
+                'stochasticity source), not {}'
+                .format(self.sde, set(self.sources), set(A.keys()))
+                )
+
     def A(self, t, x):
         """See documentation integrator.A"""
         sde_args_eval = {
             k: (z(t) if callable(z) else z)
             for (k, z) in self._get_args(self._sde_args_keys).items()
         }
-        return self.sde(t, x, **sde_args_eval)
+        # get and check sde values
+        A_ = self.sde(t, x, **sde_args_eval)
+        self._check_sde_values(A_)
+        return A_
 
     def dZ(self, t, dt):
         """See documentation of integrator.dZ"""
@@ -1642,6 +1658,20 @@ class SDEs(SDE):
     # algorithm of the integrator class
     # -----------------------------------
 
+    def _check_sde_values(self, As):
+        if not isinstance(As, (list, tuple)):
+            raise TypeError(
+                'invalid {} return values: a list or tuple of {} dict '
+                '(one per equation) expected, not a {} object'
+                .format(self.sde, self.q, type(As))
+                )
+        if len(As) != self.q:
+            raise ValueError(
+                'invalid {} return values: {} equations expected, '
+                'not {}'.format(self.sde, self.q, len(As)))
+        for a in As:
+            super()._check_sde_values(a)
+
     def A(self, t, X):
         """See documentation of integrator.A"""
         sde_args_eval = {
@@ -1653,12 +1683,13 @@ class SDEs(SDE):
         # of arrays (one per equation)
         xs = self.unpack(X)
 
-        # get sde values, as a list of dicts (one per equation)
+        # get and check sde values
         As = self.sde(t, *xs, **sde_args_eval)
+        self._check_sde_values(As)
         A_ids = set()
         for a in As:
-            A_ids.update(a)
-        A = {id: self.pack(tuple(a[id] for a in As))
+            A_ids.update(a.keys())
+        A = {id: self.pack(tuple(a.get(id, 0) for a in As))
              for id in A_ids}
         return A
 
@@ -1739,7 +1770,6 @@ class SDEs(SDE):
 
         Parameters
         ----------
-
         t : float
             Time point at which the SDE should be evaluated.
         x, y, ... : arrays
@@ -1751,9 +1781,8 @@ class SDEs(SDE):
 
         Returns
         -------
-
-        sde_terms : list of dict of arrays
-            A list of dictionaries, one per equation.
+        sde_terms : list or tuple of dict of arrays
+            A list or tuple of dictionaries, one per equation.
             See documentation of ``SDE.sde``.
 
         Notes

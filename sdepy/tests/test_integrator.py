@@ -386,3 +386,62 @@ def test_SDE():
     xs2 = integrate(f)(x0=(1.,)*4, dw=tw, paths=11, steps=30)(t)
     for u, v in zip(xs1, xs2):
         assert_allclose(xs1, xs2, rtol=eps(u.dtype))
+
+    # 4 equations with terms partially omitted
+    # (formerly a cause of error)
+    # ----------------------------------------
+    @integrate
+    def f_process(t, x=0, y=0, z=0, w=0):
+        return ({'dt': 1, 'dw': 1}, {'dt': 1}, {'dw': 1}, {})
+    xs = f_process(x0=(1,)*4, paths=11, steps=30)(t)
+
+    # SDE class from integrate
+    # ------------------------
+    @integrate(q=1, sources={'dw', 'dt'})
+    def f_process(t, x):
+        return {'dt': 1, 'dw': 1}
+    assert_(issubclass(f_process, SDE))
+    assert_(issubclass(f_process, SDEs))  # FIXME: should be SDE subclass only
+
+    @integrate
+    def f_process(t, x):
+        return {'dt': 1, 'dw': 1}
+    assert_ (issubclass(f_process, SDE))
+    assert_(not issubclass(f_process, SDEs))  # this is ok
+
+    # test errors
+    # -----------
+
+    # SDE: ok
+    class f_process(SDE, integrator):
+        def sde(self, t, x):
+            return {'dt': 1, 'dw': 1}
+    x = f_process(x0=1, paths=11, steps=30)(t)
+
+    # SDE: wrong type
+    f_process.sde = lambda self, t, x: x
+    assert_raises(TypeError, f_process(x0=1, paths=11, steps=30), t)
+
+    # SDE: wrong sde entry
+    f_process.sde = lambda self, t, x: {'dt': 1, 'dzzz': 1}
+    assert_raises(KeyError, f_process(x0=1, paths=11, steps=30), t)
+
+    # SDEs: ok
+    @integrate(q=2, sources=('dt', 'dw'))
+    def f_process(t, x, y):
+        return {'dt': 1, 'dw': 1}, {'dt': 1}
+    assert f_process.q == 2
+    x, y = f_process(x0=(1,)*2, paths=11, steps=30)(t)
+
+    # SDEs: wrong type
+    f_process.sde = lambda self, t, x, y: {'dt': 1, 'dw': 1}
+    assert f_process.q == 2
+    assert_raises(TypeError, f_process(x0=(1,)*2, paths=11, steps=30), t)
+
+    # SDEs: wrong number of equations
+    f_process.sde = lambda self, t, x, y: ({'dt': 1, 'dw': 1},)
+    assert_raises(ValueError, f_process(x0=(1,)*2, paths=11, steps=30), t)
+
+    # SDEs: wrong sde entry
+    f_process.sde = lambda self, t, x, y: ({'dt': 1}, {'dzzz': 1})
+    assert_raises(KeyError, f_process(x0=(1,)*2, paths=11, steps=30), t)
