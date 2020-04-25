@@ -9,10 +9,11 @@ install:
 
 matrix:
   # minimum requirements, fast tests
-  - python: 3.5
-  - python: 3.6
-  - python: 3.7
-  - python: 3.8
+  python:
+    - 3.5
+    - 3.6
+    - 3.7
+    - 3.8
 
   before_install:
     - pip install numpy>=1.15.2 scipy>=0.19.1 pytest>=3.8.1
