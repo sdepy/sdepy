@@ -7,8 +7,8 @@ install:
   - echo installing ./dist/sdepy*.whl
   - pip install --no-deps --ignore-installed ./dist/sdepy*.whl
 
-# fast tests with dependencies >= minimal requirements
-# for all supported python versions
+# fast tests for all supported python versions
+# with dependencies >= minimal requirements
 python:
   - 3.5
   - 3.6
@@ -20,10 +20,11 @@ before_install:
 
 script:
   - python runtests.py 'setup_tests()'
-  - pushd ./build/tests
+  - cd ./build/tests
+  #- pushd ./build/tests
   - python runtests.py 'no_source()' 'run_fast()'
-  - popd
-  - python runtests.py 'exit_tests()'
+  #- popd
+  #- python runtests.py 'exit_tests()'
 
 # additional tests
 jobs:
@@ -48,11 +49,26 @@ jobs:
         - python runtests.py 'exit_tests()'
 
     # full python 3.8 tests with specified dependencies
+    # and code coverage
     - python: 3.8
       before_install:
         - pip install numpy==1.18.3 scipy==1.4.1 pytest==5.4.1
+        - pip install coverage>=4.5.1 codecov>=2.0.15
         # needs matplotlib for quickguide doctests
         - pip install matplotlib>=3.1
+      script:
+        - python runtests.py 'setup_tests()'
+        - pushd ./build/tests
+        - coverage run --rcfile=../../.coveragerc runtests.py 'no_source()' 'run_full()'
+        - python runtests.py 'run_quickguide()'
+        - popd
+        - python runtests.py 'exit_tests()'
+      after_success:
+        - codecov
+
+
+
+
       script:
         - python runtests.py 'setup_tests()'
         - pushd ./build/tests
