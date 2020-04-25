@@ -21,10 +21,7 @@ before_install:
 script:
   - python runtests.py 'setup_tests()'
   - cd ./build/tests
-  #- pushd ./build/tests
   - python runtests.py 'no_source()' 'run_fast()'
-  #- popd
-  #- python runtests.py 'exit_tests()'
 
 # additional tests
 jobs:
@@ -42,11 +39,11 @@ jobs:
         - pip install matplotlib>=3.1
       script:
         - python runtests.py 'setup_tests()'
-        - pushd ./build/tests
+        - cd ./build/tests
         - python runtests.py 'no_source()' 'run_full()'
         - python runtests.py 'run_quickguide()'
-        - popd
-        - python runtests.py 'exit_tests()'
+        #- popd
+        #- python runtests.py 'exit_tests()'
 
     # full python 3.8 tests with specified dependencies
     # and code coverage
@@ -58,21 +55,10 @@ jobs:
         - pip install matplotlib>=3.1
       script:
         - python runtests.py 'setup_tests()'
-        - pushd ./build/tests
+        - cd ./build/tests
         - coverage run --rcfile=../../.coveragerc runtests.py 'no_source()' 'run_full()'
         - python runtests.py 'run_quickguide()'
-        - popd
-        - python runtests.py 'exit_tests()'
+        #- popd
+        #- python runtests.py 'exit_tests()'
       after_success:
         - codecov
-
-
-
-
-      script:
-        - python runtests.py 'setup_tests()'
-        - pushd ./build/tests
-        - python runtests.py 'no_source()' 'run_full()'
-        - python runtests.py 'run_quickguide()'
-        - popd
-        - python runtests.py 'exit_tests()'
