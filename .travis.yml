@@ -7,7 +7,8 @@ install:
   - echo installing ./dist/sdepy*.whl
   - pip install --no-deps --ignore-installed ./dist/sdepy*.whl
 
-# fast tests with dependencies >= latest
+# fast tests with dependencies >= minimal requirements
+# for all supported python versions
 python:
   - 3.5
   - 3.6
@@ -24,8 +25,21 @@ script:
   - popd
   - python runtests.py 'exit_tests()'
 
+# additional tests
 jobs:
   include:
+    # fast tests with minimal requirements for python and dependencies
     - python: 3.5
       before_install:
-        - pip install numpy==1.15 scipy==0.19 pytest==3.8
+        - pip install numpy==1.15.2 scipy==0.19.1 pytest==3.8.1
+
+    # full python 3.7 tests with specified dependencies
+    - python: 3.7
+      before_install:
+        - pip install numpy==1.18.1 scipy==1.4.1 pytest==5.4.1
+      script:
+        - python runtests.py 'setup_tests()'
+        - pushd ./build/tests
+        - python runtests.py 'no_source()' 'run_full()'
+        - popd
+        - python runtests.py 'exit_tests()'
