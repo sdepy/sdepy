@@ -42,8 +42,6 @@ jobs:
         - cd ./build/tests
         - python runtests.py 'no_source()' 'run_full()'
         - python runtests.py 'run_quickguide()'
-        #- popd
-        #- python runtests.py 'exit_tests()'
 
     # full python 3.8 tests with specified dependencies
     # and code coverage
@@ -58,7 +56,5 @@ jobs:
         - cd ./build/tests
         - coverage run --rcfile=../../.coveragerc runtests.py 'no_source()' 'run_full()'
         - python runtests.py 'run_quickguide()'
-        #- popd
-        #- python runtests.py 'exit_tests()'
       after_success:
         - codecov
