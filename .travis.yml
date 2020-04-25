@@ -1,5 +1,5 @@
 language: python
-sudo: false
+os: linux
 
 install:
   - rm --force ./dist/*
@@ -36,7 +36,18 @@ jobs:
     # full python 3.7 tests with specified dependencies
     - python: 3.7
       before_install:
-        - pip install numpy==1.18.1 scipy==1.4.1 pytest==5.4.1
+        - pip install numpy==1.18.3 scipy==1.4.1 pytest==5.4.1
+      script:
+        - python runtests.py 'setup_tests()'
+        - pushd ./build/tests
+        - python runtests.py 'no_source()' 'run_full()'
+        - popd
+        - python runtests.py 'exit_tests()'
+
+    # full python 3.8 tests with specified dependencies
+    - python: 3.8
+      before_install:
+        - pip install numpy==1.18.3 scipy==1.4.1 pytest==5.4.1
       script:
         - python runtests.py 'setup_tests()'
         - pushd ./build/tests
