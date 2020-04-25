@@ -1,5 +1,5 @@
 language: python
-sudo: false
+os: linux
 
 install:
   - rm --force ./dist/*
@@ -7,42 +7,54 @@ install:
   - echo installing ./dist/sdepy*.whl
   - pip install --no-deps --ignore-installed ./dist/sdepy*.whl
 
-matrix:
+# fast tests for all supported python versions
+# with dependencies >= minimal requirements
+python:
+  - 3.5
+  - 3.6
+  - 3.7
+  - 3.8
+
+before_install:
+  - pip install numpy>=1.15.2 scipy>=0.19.1 pytest>=3.8.1
+
+script:
+  - python runtests.py 'setup_tests()'
+  - cd ./build/tests
+  - python runtests.py 'no_source()' 'run_fast()'
+
+# additional tests
+jobs:
   include:
-    # minimum requirements, fast tests
+    # fast tests with minimal requirements for python and dependencies
     - python: 3.5
       before_install:
         - pip install numpy==1.15.2 scipy==0.19.1 pytest==3.8.1
-      script:
-        - python runtests.py 'setup_tests()'
-        - pushd ./build/tests
-        - python runtests.py 'no_source()' 'run_fast()'
-        - popd
-        - python runtests.py 'exit_tests()'
-    # python 3.6, latest versions of other dependencies, fast tests
-    - python: 3.6
-      before_install:
-        - pip install numpy>=1.16.2 scipy>=1.2.1 pytest>=3.8.1
-      script:
-        - python runtests.py 'setup_tests()'
-        - pushd ./build/tests
-        - python runtests.py 'no_source()' 'run_fast()'
-        - popd
-        - python runtests.py 'exit_tests()'
-    # python 3.7, latest versions of other dependencies, full tests
-    # with code coverage
+
+    # full python 3.7 tests with specified dependencies
     - python: 3.7
-      dist: xenial  # see travis-ci/travis-ci/issues/9815
-      sudo: true
       before_install:
-        - pip install numpy>=1.16.2 scipy>=1.2.1 pytest>=3.8.1
-        # - pip install matplotlib>=2.1.0  # needed for quickguide doctests
-        - pip install coverage>=4.5.1 codecov>=2.0.15
+        - pip install numpy==1.18.3 scipy==1.4.1 pytest==5.4.1
+        # needs matplotlib for quickguide doctests
+        - pip install matplotlib>=3.1
       script:
         - python runtests.py 'setup_tests()'
-        - pushd ./build/tests
+        - cd ./build/tests
+        - python runtests.py 'no_source()' 'run_full()'
+        - python runtests.py 'run_quickguide()'
+
+    # full python 3.8 tests with specified dependencies
+    # and code coverage
+    - python: 3.8
+      before_install:
+        - pip install numpy==1.18.3 scipy==1.4.1 pytest==5.4.1
+        - pip install coverage>=4.5.1 codecov>=2.0.15
+        # needs matplotlib for quickguide doctests
+        - pip install matplotlib>=3.1
+      script:
+        - python runtests.py 'setup_tests()'
+        - cd ./build/tests
         - coverage run --rcfile=../../.coveragerc runtests.py 'no_source()' 'run_full()'
-        - popd
-        - python runtests.py 'exit_tests()'
+        - python runtests.py 'run_quickguide()'
       after_success:
         - codecov

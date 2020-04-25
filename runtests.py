@@ -126,6 +126,7 @@ def run_quickguide():
     Run doctest on ./doc/quickguide.rst
     """
     # needs matplotlib.pyplot to be installed
+    print_info()
     return doctest.testfile(
         os.path.join(HOME_DIR, 'doc', 'quickguide.rst'),
         module_relative=False
@@ -137,6 +138,7 @@ def run_quickguide_py():
     Run ./quickguide.py
     """
     # needs matplotlib.pyplot to be installed
+    print_info()
     spec = importlib.util.spec_from_file_location(
         'quickguide',
         os.path.join(HOME_DIR, 'quickguide.py'))
@@ -152,6 +154,7 @@ def run_fast():
     """
     Run fast tests
     """
+    print_info()
     return int(not test())
 
 
@@ -159,6 +162,7 @@ def run_full():
     """
     Run full tests including tests marked 'slow' and doctests
     """
+    print_info()
     return int(not test('full', doctests=True))
 
 
@@ -169,6 +173,7 @@ def run_insane():
     """
     # needs matplotlib.pyplot to be installed
     # saves realized errors and plots in PACKAGE_DIR/tests/cfr
+    print_info()
     res = []
 
     def run_tests(*var, **args):
@@ -233,7 +238,6 @@ for command in (setup_tests, exit_tests, no_source,
     usage += command.__name__ + '(): ' + command.__doc__ + '\n'
 
 if __name__ == '__main__':
-    print_info()
     cmds = sys.argv[1:]
 
     if not cmds or cmds[0] in ('-h', '--help'):
