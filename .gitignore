@@ -1,6 +1,7 @@
 *.py[cod]
-.ipynb_checkpoints
-*.ipynb
+quickguide_.py
+quickguide_.ipynb
+quickguide__.ipynb
 *.wpr
 *.lnk
 *.pdf

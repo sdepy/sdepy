@@ -7,6 +7,8 @@ import pdb
 import shutil
 import sys
 import os
+import pathlib
+import nbformat as nbf
 import inspect
 import importlib
 import doctest
@@ -74,19 +76,22 @@ def corr(a, b=None):
          for j in range(n)])
 
 
-def getcode(in_, out, mode='x'):
+def getcode(in_, out, mode='w'):
     """
-    Parse doc file named 'in_', trasform doctests
-    into executable code and all the rest into
-    comments, and save output in file named 'out'
-    """
-    header = \
-        '# ------------------------------------------\n'\
-        '# This file has been automatically generated\n'\
-        '# from {}                                   \n'\
-        '# ------------------------------------------\n'\
-        .format(in_)
+    Converd documentation file to python code.
 
+    Parse doc file named 'in_', transform doctests
+    into executable code and the rest into comments,
+    and save output in file named 'out'.
+    """
+    header = (
+        '# -------------------------------------\n'
+        '# This file was automatically generated\n'
+        '# from {}                              \n'
+        '# -------------------------------------\n'
+        ).format(in_)
+
+    in_, out = str(pathlib.Path(in_)), str(pathlib.Path(out))
     with open(in_) as i, open(out, mode) as o:
         print(header, file=o)
         sep = ''
@@ -103,22 +108,116 @@ def getcode(in_, out, mode='x'):
                 sep = ''
 
 
-def quickguide_make():
+def getnotebook(in_, out, skip=0, magic='',
+                to_markdown=lambda x: x,
+                to_code=lambda x: x):
+    """
+    Convert documentation file to jupyter notebook.
+
+    Parse doc file named 'in_', transform doctests
+    into code cells and the rest into markdown cells,
+    and save output in a jupyter notebook named 'out'.
+    Skips 'skip' initiali lines. Puts 'magic' at the
+    beginning of the first code cell.
+    """
+    header = [
+        '*This file was automatically generated from {}*\n'.format(in_),
+        '\n',
+        '-----------------------------------------------\n']
+
+    in_, out = str(pathlib.Path(in_)), str(pathlib.Path(out))
+    with open(in_) as f:
+        z = header + [x.rstrip() + '\n'
+             for x in f.readlines()[skip:]]
+
+    nb = nbf.v4.new_notebook()
+    nb['cells'] = []
+    while z:
+        text = ''
+        # parse markdown cell
+        while z and z[0][:4] != '    ':
+            text += z.pop(0)
+        text = to_markdown(text)
+        nb['cells'].append(
+            nbf.v4.new_markdown_cell(text))
+
+        text = ''
+        # parse code cell
+        while z and z[0][:4] in ('    ', '\n'):
+            line = z.pop(0)
+            if line == '\n':
+                text += '\n'
+            elif len(line[4:]) >= 3 and line[4:7] in ('>>>', '...'):
+                text += line[8:]
+            else:
+                pass  # skip code output
+        assert text[-1] == '\n'
+        text = text[:-1]  # last \n is redundant
+        text = to_code(text)
+        nb['cells'].append(nbf.v4.new_code_cell(text))
+
+    # put %matplotlib inline in first code cell
+    if magic.strip():
+        for cell in nb['cells']:
+            if cell['cell_type'] == 'code':
+                break
+        cell['source'] = magic + '\n' + cell['source']
+    nbf.write(nb, out)
+
+
+def execute_notebook(in_, out):
+    in_, out = str(pathlib.Path(in_)), str(pathlib.Path(out))
+    os.system(
+        'jupyter-nbconvert --to notebook --execute '
+        '--output {out} {in_}'
+        .format(in_=in_, out=out)
+        )
+
+
+def quickguide_make(execute=True):
     """
     Generate ./quickguide.py from ./doc/quickguide.rst
     """
-    getcode(os.path.join('.', 'doc', 'quickguide.rst'),
-            'quickguide.py',
-            mode='w')
+    getcode(in_='./doc/quickguide.rst', out='./quickguide_.py')
+    getnotebook(in_='./doc/quickguide.rst', out='./quickguide_.ipynb',
+                skip=1,  # skip initial '==========='
+                magic='%matplotlib inline\n'
+                "%config InlineBackend.figure_format = 'retina'",
+                to_markdown=lambda x: x.replace('::', ':'),
+                to_code=lambda x: x.replace('# doctest: +SKIP', ''),
+                )
+    if execute:
+        execute_notebook(in_='./quickguide_.ipynb',
+                         out='./quickguide__.ipynb')
 
 
-def inspect_warnings():
+def quickguide_commit():
+    rename_files = (
+        ('./quickguide_.py', './quickguide.py'),
+        ('./quickguide__.ipynb', './quickguide.ipynb'),
+        )
+    for in_, out in rename_files:
+        in_, out = str(pathlib.Path(in_)), str(pathlib.Path(out))
+        if os.path.exists(out):
+            os.remove(out)
+        os.rename(in_, out)
+
+
+def inspect_warnings(action='error'):
     """
     Execute all tests in sdepy.tests module,
     printing warnings if any.
     """
-    warnings.filterwarnings('default')
-    for key, item in globals().items():
-        if key[:5] == 'test_':
-            print('\nrunning', key)
-            item()
+    with warnings.catch_warnings():
+        warnings.filterwarnings(action)
+        for key, item in globals().items():
+            if key[:5] == 'test_':
+                print('\nrunning', key)
+                item()
+
+
+# minimal setup as a command line script
+if __name__ == '__main__':
+    for cmd in sys.argv[1:]:
+        eval(cmd)
+    sys.exit(0)

@@ -12,12 +12,13 @@ in a directory in your Python path.
 
 Import as
 
-   >>> import sdepy
-   >>> from sdepy import *  # safe and handy for interactive sessions
-   >>> import numpy as np
-   >>> import scipy
-   >>> import matplotlib.pyplot as plt  # optional, if plots are needed
-
+    >>> import sdepy
+    >>> from sdepy import *  # safe and handy for interactive sessions
+    >>> import numpy as np
+    >>> import scipy
+    >>> import matplotlib.pyplot as plt  # optional, if plots are needed
+    >>> plt.rcParams['figure.figsize'] = (10, 5)
+    >>> plt.rcParams['lines.linewidth'] = 1.
 
 -------------------
 How to state an SDE
@@ -59,14 +60,16 @@ allows for more concise handling of parameters:
     >>> iskfunc(myp)
     True
 
-It is best explained by examples:
+It is best explained by examples, involving ``my_process``, ``myp`` and
+
+    >>> coarse_timeline = (0., 0.25, 0.5, 0.75, 1.0)
+    >>> timeline = np.linspace(0., 1., 501)
+    >>> np.random.seed(1)  # make doctests predictable
 
 
 1. **Scalar process** in 100000 paths, with default parameters, computed
    at 5 time points, using 100 steps in between::
 
-    >>> coarse_timeline = (0., 0.25, 0.5, 0.75, 1.0)
-    >>> np.random.seed(1)  # make doctests predictable
     >>> x = my_process(x0=1, paths=100*1000,
     ...                steps=100)(coarse_timeline)
     >>> x.shape
@@ -82,11 +85,46 @@ It is best explained by examples:
     >>> x.shape
     (5, 3, 100000)
 
-3. Vector process with **time-dependent parameters and correlations**,
+
+3. **Interactive modification** of process and integration parameters
+   using the ``kfunc`` decorator ``myp = kfunc(my_process)``::
+
+    >>> p = myp(x0=1, sigma=1, paths=1000)
+
+   Such ``p``, as a kfunc object, accepts either an integration timeline,
+   or a modified value of some integration or SDE parameters, or both::
+
+    >>> x = p(timeline)
+    >>> x1, x2 = p(timeline, sigma=0.5), p(timeline, sigma=1.5)
+    >>> q = p(paths=100, vshape=(3,), k=2)
+    >>> y = q(timeline, sigma=0.5)
+
+   ``x`` is the result of integrating ``p`` along ``timeline`` (no difference
+   here from a ``my_process`` instance).
+   ``x1, x2`` are obtained by integration along the given ``timeline``
+   by setting ``sigma`` to the given values,
+   and keeping other parameters as stated when ``p`` was instantiated.
+   ``q`` is another ``kfunc`` object with updated default values for ``paths``,
+   ``vshape`` and ``k``, and all else left as in ``p``.
+   ``y`` was obtained integrating ``q`` along ``timeline``,
+   with its own parameters, save for ``sigma`` that was set to ``0.5``.
+
+   ``kfunc`` objects therefore allow, in interactive sessions, to state a
+   central value of parameters once, and to fluently alter
+   each parameter as needed, without either affecting,
+   or being forced to restate, all other parameters.
+
+   To inspec the parameters stored in a ``kfunc`` object, use the
+   read-only ``params`` attribute::
+
+    >>> print('p:', p.params)
+    >>> print('q:', q.params)
+
+
+4. Vector process with **time-dependent parameters and correlations**,
    computed on a fine-grained timeline and 10000 paths, using one
    integration step for each point in the timeline (no ``steps`` parameter)::
 
-    >>> timeline = np.linspace(0., 1., 101)
     >>> corr = lambda t: ((1, .2, -.1*t), (.2, 1, .1), (-.1*t, .1, 1))
     >>> theta, k, sigma = (lambda t: 2-t, lambda t: 2/(t+1), lambda t: np.sin(t/2))
     >>> x = my_process(x0=1, vshape=3, corr=corr,
@@ -97,7 +135,7 @@ It is best explained by examples:
     >>> plt.show()  # doctest: +SKIP
 
 
-4. A scalar process with **path-dependent initial conditions and parameters**,
+5. A scalar process with **path-dependent initial conditions and parameters**,
    integrated **backwards** (``i0=-1``)::
 
     >>> x0 = np.random.random(10*1000)
@@ -110,7 +148,7 @@ It is best explained by examples:
     True
 
 
-5. A scalar process computed on a **10 x 15 grid of parameters** ``sigma`` and
+6. A scalar process computed on a **10 x 15 grid of parameters** ``sigma`` and
    ``k`` (note that the shape of the initial conditions and of each
    parameter should be broadcastable to the values of the process across
    paths, i.e. to shape ``vshape + (paths,)``)::
@@ -129,7 +167,7 @@ It is best explained by examples:
   average process values).
 
 
-6. Processes generated using **integration results as stochasticity sources**
+7. Processes generated using **integration results as stochasticity sources**
    (mind using consistent ``vshape`` and ``paths``, and synchronizing timelines)::
 
     >>> my_dw = integrate(lambda t, x: {'dw': 1})(vshape=1, paths=10000)(timeline)
@@ -155,11 +193,11 @@ It is best explained by examples:
     (5, 3, 10000)
 
 
-7. Using **stochasticity sources with memory**
+8. Using **stochasticity sources with memory**
    (mind using consistent ``vshape`` and ``paths``)::
 
     >>> my_dw = true_wiener_source(paths=10000)
-    >>> p = myp(x0=1, k=1, sigma=1, dw=my_dw, paths=10000)
+    >>> p = myp(x0=1, theta=1, k=1, sigma=1, dw=my_dw, paths=10000)
 
     >>> t1 = np.linspace(0., 1.,  30)
     >>> t2 = np.linspace(0., 1., 100)
@@ -169,12 +207,13 @@ It is best explained by examples:
 
    These processes share the same underlying Wiener increments:
    ``x1, x2, x3`` illustrate SDE integration convergence as steps become
-   smaller, and ``y1, y2, y3`` illustrate how ``k`` affects paths,
+   smaller, and ``y1, y2, y3`` illustrate how ``theta`` affects paths,
    all else being equal::
 
     >>> i = 0 # path to be plotted
     >>> gr = plt.plot(t, x1(t)[:, i], t, x2(t)[:, i], t, x3(t)[:, i])
-    >>> gr = plt.plot(t, y1[:, i], t3, y2[:, i], t3, y3[:, i])
+    >>> plt.show() # doctest: +SKIP
+    >>> gr = plt.plot(t, y1[:, i], t, y2[:, i], t, y3[:, i])
     >>> plt.show() # doctest: +SKIP
 
 
@@ -516,4 +555,4 @@ Its price is::
     >>> payoff[np.logical_not(down_and_in_paths)] = 0
     >>> a = montecarlo(payoff, use='even')
     >>> print(a)  # doctest: +SKIP
-	4.997 +/- 0.027
+    4.997 +/- 0.027
