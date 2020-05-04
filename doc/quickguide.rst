@@ -20,6 +20,7 @@ Import as
     >>> plt.rcParams['figure.figsize'] = (10, 5)
     >>> plt.rcParams['lines.linewidth'] = 1.
 
+
 -------------------
 How to state an SDE
 -------------------
@@ -66,7 +67,6 @@ It is best explained by examples, involving ``my_process``, ``myp`` and
     >>> timeline = np.linspace(0., 1., 501)
     >>> np.random.seed(1)  # make doctests predictable
 
-
 1. **Scalar process** in 100000 paths, with default parameters, computed
    at 5 time points, using 100 steps in between::
 
@@ -74,7 +74,6 @@ It is best explained by examples, involving ``my_process``, ``myp`` and
     ...                steps=100)(coarse_timeline)
     >>> x.shape
     (5, 100000)
-
 
 2. **Vector process** with three components and **correlated Wiener increments**
    (same parameters, paths, timeline and steps as above)::
@@ -84,7 +83,6 @@ It is best explained by examples, involving ``my_process``, ``myp`` and
     ...                paths=100*1000, steps=100)(coarse_timeline)
     >>> x.shape
     (5, 3, 100000)
-
 
 3. **Interactive modification** of process and integration parameters
    using the ``kfunc`` decorator ``myp = kfunc(my_process)``::
@@ -114,26 +112,37 @@ It is best explained by examples, involving ``my_process``, ``myp`` and
    each parameter as needed, without either affecting,
    or being forced to restate, all other parameters.
 
-   To inspec the parameters stored in a ``kfunc`` object, use the
+   To inspect the parameters stored in a ``kfunc`` object, use the
    read-only ``params`` attribute::
 
-    >>> print('p:', p.params)
-    >>> print('q:', q.params)
-
+    >>> q.params  # doctest: +SKIP
+    {
+       'paths': 100,
+       'vshape': (3,),
+       'x0': array(1),
+       'sigma': array(1),
+       'k': array(2),
+       ...,
+    }
 
 4. Vector process with **time-dependent parameters and correlations**,
    computed on a fine-grained timeline and 10000 paths, using one
    integration step for each point in the timeline (no ``steps`` parameter)::
 
     >>> corr = lambda t: ((1, .2, -.1*t), (.2, 1, .1), (-.1*t, .1, 1))
-    >>> theta, k, sigma = (lambda t: 2-t, lambda t: 2/(t+1), lambda t: np.sin(t/2))
+    >>> theta = lambda t: 2-t
+    >>> k = lambda t: 2/(t+1)
+    >>> sigma = lambda t: 1/10 + np.sin(t/2)
     >>> x = my_process(x0=1, vshape=3, corr=corr,
     ...                theta=theta, k=k, sigma=sigma, paths=10*1000)(timeline)
     >>> x.shape
-    (101, 3, 10000)
-    >>> gr = plt.plot(timeline, x[:, 0, :4])  # inspect a few paths
-    >>> plt.show()  # doctest: +SKIP
+    (501, 3, 10000)
 
+   A plot of a few paths may be used to inspect the integration result
+   (this plot refers to the first 4 paths of the first component of ``x``)::
+
+    >>> gr = plt.plot(timeline, x[:, 0, :4])
+    >>> plt.show()  # doctest: +SKIP
 
 5. A scalar process with **path-dependent initial conditions and parameters**,
    integrated **backwards** (``i0=-1``)::
@@ -143,10 +152,13 @@ It is best explained by examples, involving ``my_process``, ``myp`` and
     >>> x = my_process(x0=x0, sigma=sigma, paths=10*1000,
     ...                i0=-1)(timeline)
     >>> x.shape
-    (101, 10000)
+    (501, 10000)
+
+   When integrating backwards, the inital conditions are applied
+   at the final point in the given timeline::
+
     >>> (x[-1, :] == x0).all()
     True
-
 
 6. A scalar process computed on a **10 x 15 grid of parameters** ``sigma`` and
    ``k`` (note that the shape of the initial conditions and of each
@@ -159,13 +171,18 @@ It is best explained by examples, involving ``my_process``, ``myp`` and
     ...                paths=10*1000)(coarse_timeline)
     >>> x.shape
     (5, 10, 15, 10000)
-    >>> gr = plt.plot(coarse_timeline, x[:, 5, ::2, :].mean(axis=-1))
+
+   A plot of the final average process values against ``k``
+   illustrates a faster reversion to ``theta=2`` as
+   ``k`` increases, as well as the independence of the
+   process mean from ``sigma``.
+
+    >>> for i in range(10):
+    ...     gr = plt.plot(k[0, :, 0], x[-1, i, :, :].mean(axis=-1))
     >>> plt.show() # doctest: +SKIP
 
-  In the example above, set ``steps=100`` to go from inaccurate and fast,
-  to meaningful and slow (the plot illustrates the ``k``-dependence of
-  average process values).
-
+   In the example above, set ``steps>=100`` to go from inaccurate and fast,
+   to meaningful and slow.
 
 7. Processes generated using **integration results as stochasticity sources**
    (mind using consistent ``vshape`` and ``paths``, and synchronizing timelines)::
@@ -175,7 +192,7 @@ It is best explained by examples, involving ``my_process``, ``myp`` and
     ...         x0=1, sigma=((1,), (2,), (3,)))  # using myp = kfunc(my_process)
     >>> x = p(timeline)
     >>> x.shape
-    (101, 3, 10000)
+    (501, 3, 10000)
 
    Now, ``x1, x2, x3 = = x[:, 0], x[:, 1], x[:, 2]`` have different ``sigma``,
    but share the same ``dw`` increments, as can be seen plotting a path:
@@ -191,7 +208,6 @@ It is best explained by examples, involving ``my_process``, ``myp`` and
     >>> x = p(coarse_timeline, steps=timeline)
     >>> x.shape
     (5, 3, 10000)
-
 
 8. Using **stochasticity sources with memory**
    (mind using consistent ``vshape`` and ``paths``)::
@@ -231,61 +247,72 @@ repeatedly used in the examples below)::
     >>> x.shape
     (101, 3, 1000)
 
-``x`` is a ``process`` instance, based on the given timeline:
+``x`` is a ``process`` instance::
 
     >>> type(x)
     <class 'sdepy.infrastructure.process'>
+
+and is based on the given timeline::
+
     >>> np.isclose(timeline, x.t).all()
     True
 
-
 Whenever possible, a process will store references, not copies, of timeline
-and values. In fact,
+and values. In fact::
 
     >>> timeline is x.t
     True
 
-
 The first axis is reserved for the timeline, the last for paths, and axes
-in the middle match the shape of process values:
+in the middle match the shape of process values::
 
     >>> x.shape == x.t.shape + x.vshape + (x.paths,)
     True
 
-
-Calling processes interpolates in time (the result is an array, not a process)::
+Calling processes interpolates in time::
 
     >>> y = x(coarse_timeline)
-
     >>> y.shape
     (5, 3, 1000)
+
+The result is always an array, not a process::
 
     >>> type(y)
     <class 'numpy.ndarray'>
 
-
-All array methods, including indexing, work as usual (no overriding),
-and return NumPy arrays::
+Indexing works as usual, and returns NumPy arrays::
 
     >>> type(x[0])
     <class 'numpy.ndarray'>
+
+All array methods are unchanged  (no overriding),
+and return NumPy arrays as well::
+
     >>> type(x.mean(axis=0))
     <class 'numpy.ndarray'>
 
 
-You can slice processes along time, values and paths with special indexing::
+You can slice processes along time, values and paths with special indexing.
 
-    >>> y = x['t', ::2]  # time indexing
+- Time indexing::
+
+    >>> y = x['t', ::2]
     >>> y.shape
     (51, 3, 1000)
-    >>> y = x['v', 0]  # values indexing
+
+- Values indexing::
+
+    >>> y = x['v', 0]
     >>> y.shape
     (101, 1000)
-    >>> y = x['p', :10]  # paths indexing
+
+- Paths indexing::
+
+    >>> y = x['p', :10]
     >>> y.shape
     (101, 3, 10)
 
-The output of a special indexing operation is a process:
+The output of a special indexing operation is a process::
 
     >>> isinstance(y, process)
     True
@@ -346,7 +373,6 @@ cumulated across multiple runs, using the ``montecarlo`` class. Some examples fo
     >>> xmax.shape
     (1, 3, 1000)
 
-
 5. A linearly interpolated, or Gaussian kernel estimate (default)
    of the probability distribution function (pdf) and its cumulated
    values (cdf) across paths, at a given time point,
@@ -358,7 +384,6 @@ cumulated across multiple runs, using the ``montecarlo`` class. Some examples fo
     >>> gr = plt.plot(ygrid, a.pdf(ygrid), ygrid, a.cdf(ygrid))
     >>> gr = plt.plot(ygrid, a.pdf(ygrid, method='interp', kind='nearest'))
     >>> plt.show()  # doctest: +SKIP
-
 
 6. A ``montecarlo`` instance can be used to cumulate the results
    of multiple simulations, across multiple components of process values::
@@ -505,7 +530,7 @@ Example - Basket Lookback Option
 --------------------------------
 
 Take a basket of 4 financial securities, with risk-neutral probabilities following
-lognormal processes in the Black-Sholes framework. Correlations, dividend yields
+lognormal processes in the Black-Scholes framework. Correlations, dividend yields
 and term structure of volatility (will be linearly interpolated) are given below::
 
     >>> corr = [
