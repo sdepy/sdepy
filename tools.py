@@ -108,26 +108,25 @@ def getcode(in_, out, mode='w'):
                 sep = ''
 
 
-def getnotebook(in_, out, skip=0, magic='',
+def getnotebook(in_, out,
+                skip=0, header=(), magic='',
                 to_markdown=lambda x: x,
                 to_code=lambda x: x):
     """
     Convert documentation file to jupyter notebook.
 
     Parse doc file named 'in_', transform doctests
-    into code cells and the rest into markdown cells,
-    and save output in a jupyter notebook named 'out'.
-    Skips 'skip' initiali lines. Puts 'magic' at the
-    beginning of the first code cell.
-    """
-    header = [
-        '*This file was automatically generated from {}*\n'.format(in_),
-        '\n',
-        '-----------------------------------------------\n']
+    into code cells (omitting output) and the rest into
+    markdown cells, and save output in a jupyter notebook named 'out'.
+    Skips 'skip' initiali lines, inserts lines in 'header' at the top,
+    puts 'magic' text at the beginning of the first code cell.
 
+    Markdown and code text is preprocessed via 'to_markdown'
+    and 'to_code' respectively.
+    """
     in_, out = str(pathlib.Path(in_)), str(pathlib.Path(out))
     with open(in_) as f:
-        z = header + [x.rstrip() + '\n'
+        z = list(header) + [x.rstrip() + '\n'
              for x in f.readlines()[skip:]]
 
     nb = nbf.v4.new_notebook()
@@ -151,8 +150,6 @@ def getnotebook(in_, out, skip=0, magic='',
                 text += line[8:]
             else:
                 pass  # skip code output
-        assert text[-1] == '\n'
-        text = text[:-1]  # last \n is redundant
         text = to_code(text)
         nb['cells'].append(nbf.v4.new_code_cell(text))
 
@@ -178,29 +175,28 @@ def quickguide_make(execute=True):
     """
     Generate ./quickguide.py from ./doc/quickguide.rst
     """
-    getcode(in_='./doc/quickguide.rst', out='./quickguide_.py')
-    getnotebook(in_='./doc/quickguide.rst', out='./quickguide_.ipynb',
+    getcode(in_='./doc/quickguide.rst', out='./quickguide.py')
+
+    in_ = './doc/quickguide.rst'
+    out = './quickguide_.ipynb'
+    header = (
+        '*This file, part of the* [SdePy](https://github.com/sdepy/sdepy) '
+        '*package* v{},\n'.format(sdepy.__version__),
+        '*was automatically generated from* `{}`\n'.format(in_),
+        '\n',
+        '-----------------------------------------------\n')
+    getnotebook(in_=in_, out=out,
                 skip=1,  # skip initial '==========='
+                header=header,
                 magic='%matplotlib inline\n'
-                "%config InlineBackend.figure_format = 'retina'",
+                "%config InlineBackend.figure_format = 'png'",
                 to_markdown=lambda x: x.replace('::', ':'),
-                to_code=lambda x: x.replace('# doctest: +SKIP', ''),
+                to_code=lambda x:
+                x.replace('# doctest: +SKIP', '').rstrip() + '\n',
                 )
     if execute:
         execute_notebook(in_='./quickguide_.ipynb',
-                         out='./quickguide__.ipynb')
-
-
-def quickguide_commit():
-    rename_files = (
-        ('./quickguide_.py', './quickguide.py'),
-        ('./quickguide__.ipynb', './quickguide.ipynb'),
-        )
-    for in_, out in rename_files:
-        in_, out = str(pathlib.Path(in_)), str(pathlib.Path(out))
-        if os.path.exists(out):
-            os.remove(out)
-        os.rename(in_, out)
+                         out='./quickguide.ipynb')
 
 
 def inspect_warnings(action='error'):

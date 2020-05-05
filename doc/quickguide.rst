@@ -17,7 +17,7 @@ Import as
     >>> import numpy as np
     >>> import scipy
     >>> import matplotlib.pyplot as plt  # optional, if plots are needed
-    >>> plt.rcParams['figure.figsize'] = (10, 5)
+    >>> plt.rcParams['figure.figsize'] = (11., 5.5)
     >>> plt.rcParams['lines.linewidth'] = 1.
 
 
@@ -64,7 +64,7 @@ allows for more concise handling of parameters:
 It is best explained by examples, involving ``my_process``, ``myp`` and
 
     >>> coarse_timeline = (0., 0.25, 0.5, 0.75, 1.0)
-    >>> timeline = np.linspace(0., 1., 501)
+    >>> timeline = np.linspace(0., 1., 500)
     >>> np.random.seed(1)  # make doctests predictable
 
 1. **Scalar process** in 100000 paths, with default parameters, computed
@@ -136,7 +136,7 @@ It is best explained by examples, involving ``my_process``, ``myp`` and
     >>> x = my_process(x0=1, vshape=3, corr=corr,
     ...                theta=theta, k=k, sigma=sigma, paths=10*1000)(timeline)
     >>> x.shape
-    (501, 3, 10000)
+    (500, 3, 10000)
 
    A plot of a few paths may be used to inspect the integration result
    (this plot refers to the first 4 paths of the first component of ``x``)::
@@ -152,7 +152,7 @@ It is best explained by examples, involving ``my_process``, ``myp`` and
     >>> x = my_process(x0=x0, sigma=sigma, paths=10*1000,
     ...                i0=-1)(timeline)
     >>> x.shape
-    (501, 10000)
+    (500, 10000)
 
    When integrating backwards, the inital conditions are applied
    at the final point in the given timeline::
@@ -192,7 +192,7 @@ It is best explained by examples, involving ``my_process``, ``myp`` and
     ...         x0=1, sigma=((1,), (2,), (3,)))  # using myp = kfunc(my_process)
     >>> x = p(timeline)
     >>> x.shape
-    (501, 3, 10000)
+    (500, 3, 10000)
 
    Now, ``x1, x2, x3 = = x[:, 0], x[:, 1], x[:, 2]`` have different ``sigma``,
    but share the same ``dw`` increments, as can be seen plotting a path:
