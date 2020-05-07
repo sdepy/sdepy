@@ -397,6 +397,7 @@ def test_SDE():
 
     # SDE class from integrate
     # ------------------------
+    # without test evaluation (single equation specified by 'q=0')
     @integrate(q=0, sources={'dw', 'dt'})
     def f_process(t, x):
         return {'dt': 1, 'dw': 1}
@@ -404,11 +405,12 @@ def test_SDE():
     assert_(not issubclass(f_process, SDEs))
     x = f_process(x0=1, paths=11, steps=30)(t)
 
+    # with test evaluation
     @integrate
     def f_process(t, x):
         return {'dt': 1, 'dw': 1}
     assert_ (issubclass(f_process, SDE))
-    assert_(not issubclass(f_process, SDEs))  # this is ok
+    assert_(not issubclass(f_process, SDEs))
     x = f_process(x0=1, paths=11, steps=30)(t)
 
     # test errors
