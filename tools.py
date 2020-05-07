@@ -76,21 +76,17 @@ def corr(a, b=None):
          for j in range(n)])
 
 
-def getcode(in_, out, mode='w'):
+# used to generate quickguide.py in
+# versions <= 1.1.0
+def getcode(in_, out, mode='w', header=''):
     """
-    Converd documentation file to python code.
+    Convert documentation file to python code.
 
     Parse doc file named 'in_', transform doctests
     into executable code and the rest into comments,
     and save output in file named 'out'.
+    Inserts 'header' at the top.
     """
-    header = (
-        '# -------------------------------------\n'
-        '# This file was automatically generated\n'
-        '# from {}                              \n'
-        '# -------------------------------------\n'
-        ).format(in_)
-
     in_, out = str(pathlib.Path(in_)), str(pathlib.Path(out))
     with open(in_) as i, open(out, mode) as o:
         print(header, file=o)
@@ -163,7 +159,10 @@ def getnotebook(in_, out,
 
 
 def execute_notebook(in_, out):
-    in_, out = str(pathlib.Path(in_)), str(pathlib.Path(out))
+    in_, out = [str(pathlib.Path(z).resolve())
+                for z in (in_, out)]
+    # when using relative paths, jupyter-nbconvert
+    # resolves 'out' relative to 'in_', not to current dir
     os.system(
         'jupyter-nbconvert --to notebook --execute '
         '--output {out} {in_}'
@@ -173,19 +172,19 @@ def execute_notebook(in_, out):
 
 def quickguide_make(execute=True):
     """
-    Generate ./quickguide.py from ./doc/quickguide.rst
+    Generate notebook from ./doc/quickguide.rst
     """
-    getcode(in_='./doc/quickguide.rst', out='./quickguide.py')
-
+    pathlib.Path('./dist').mkdir(exist_ok=True)
     in_ = './doc/quickguide.rst'
-    out = './quickguide_.ipynb'
+    out_code = './dist/quickguide_code.ipynb'
+    out_executed = './dist/quickguide.ipynb'
     header = (
         '*This file, part of the* [SdePy](https://github.com/sdepy/sdepy) '
         '*package* v{},\n'.format(sdepy.__version__),
         '*was automatically generated from* `{}`\n'.format(in_),
         '\n',
         '-----------------------------------------------\n')
-    getnotebook(in_=in_, out=out,
+    getnotebook(in_=in_, out=out_code,
                 skip=1,  # skip initial '==========='
                 header=header,
                 magic='%matplotlib inline\n'
@@ -195,8 +194,8 @@ def quickguide_make(execute=True):
                 x.replace('# doctest: +SKIP', '').rstrip() + '\n',
                 )
     if execute:
-        execute_notebook(in_='./quickguide_.ipynb',
-                         out='./quickguide.ipynb')
+        execute_notebook(in_=out_code,
+                         out=out_executed)
 
 
 def inspect_warnings(action='error'):

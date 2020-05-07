@@ -5,7 +5,6 @@
 *.lnk
 *.pdf
 .coverage
-quickguide.py
 sdepy/tests/cfr/*_realized.txt
 sdepy/tests/cfr/*.png
 doc/_build/*
@@ -13,3 +12,4 @@ doc/generated/*
 build/*
 dist/*
 *egg-info/*
+
