@@ -133,23 +133,6 @@ def run_quickguide():
         ).failed
 
 
-def run_quickguide_py():
-    """
-    Run ./quickguide.py
-    """
-    # needs matplotlib.pyplot to be installed
-    print_info()
-    spec = importlib.util.spec_from_file_location(
-        'quickguide',
-        os.path.join(HOME_DIR, 'quickguide.py'))
-    quickguide = importlib.util.module_from_spec(spec)
-    try:
-        spec.loader.exec_module(quickguide)
-        return 0
-    except Exception:
-        return 1
-
-
 def run_fast():
     """
     Run fast tests
@@ -233,7 +216,7 @@ Available commands ('.' is the package home directory):
 
 """
 for command in (setup_tests, exit_tests, no_source,
-                run_quickguide, run_quickguide_py,
+                run_quickguide,
                 run_fast, run_full, run_insane):
     usage += command.__name__ + '(): ' + command.__doc__ + '\n'
 

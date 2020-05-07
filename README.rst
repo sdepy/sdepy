@@ -32,7 +32,7 @@ Start here
 
 -  `Installation           <https://pypi.org/project/sdepy>`_: ``pip install sdepy``
 -  `Quick Guide            <https://sdepy.readthedocs.io/en/v1.1.0/intro.html#id2>`_
-   (as `code               <https://github.com/sdepy/sdepy/blob/v1.1.0/quickguide.py>`_)
+   (as `notebook           <https://nbviewer.jupyter.org/github/sdepy/sdepy-doc/blob/master/quickguide.ipynb>`_ - *to be published soon*)
 -  `Documentation          <https://sdepy.readthedocs.io/en/v1.1.0>`_
    (as `pdf                <https://readthedocs.org/projects/sdepy/downloads/pdf/v1.1.0>`_)
 -  `Source                 <https://github.com/sdepy/sdepy>`_
