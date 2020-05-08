@@ -664,10 +664,10 @@ by the basket (equally weighted), minus 105, if positive.
 Its price is::
 
     >>> x_worst = x.min(axis=1)
-    >>> x_mean = x.mean(axis=1)
+    >>> x_basket = x.mean(axis=1)
     >>> down_and_in_paths = (x_worst.min(axis=0) < 80)
-    >>> lookback_x_mean = x_mean.max(axis=0)
-    >>> payoff = np.maximum(0, lookback_x_mean - 105)
+    >>> lookback_x_basket = x_basket.max(axis=0)
+    >>> payoff = np.maximum(0, lookback_x_basket - 105)
     >>> payoff[np.logical_not(down_and_in_paths)] = 0
     >>> a = sdepy.montecarlo(payoff, use='even')
     >>> print(a)  # doctest: +SKIP
