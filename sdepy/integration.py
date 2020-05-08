@@ -1808,35 +1808,38 @@ def _SDE_from_function(f, q=None, sources=None, log=False, addaxis=False):
 
     if q is not None and sources is not None:
         neq = q
-        ids = sources
+        ids = set(sources)
+        SDE_class = SDE if neq == 0 else SDEs
     else:
+        # perform a test evaluation of f
         try:
             try:
-                test_val = f(np.array(1.), np.array(1.))
-            except Exception:
                 test_val = f()
-            if isinstance(test_val, (tuple, list, np.ndarray)):
-                neq = len(test_val)
-                if neq == 0:
-                    raise ValueError
-                SDE_class = SDEs
-            else:
-                neq = 0
-                SDE_class = SDE
-                test_val = (test_val,)
-            ids = set()
-            for z in test_val:
-                ids.update(z.keys())
+            except Exception:
+                test_val = f(np.array(1.), np.array(1.))
         except Exception:
             raise TypeError(
-                'test evaluation of {} at t=1., x=1. failed - '
-                'it is recommended to provide valid defaults '
-                'for t, x, and other arguments, or to explicitly pass '
-                "'q' (number of equations) and 'source' (ids of sources)"
-                'keyword arguments to integrate()'
+                'test evaluation of {} failed'
                 .format(f))
-
-    SDE_class = SDE if neq == 0 else SDEs
+        # infer neq, ids and SDE_class from test_val
+        if isinstance(test_val, (tuple, list)):
+            neq = len(test_val)
+            if neq == 0:
+                raise ValueError('non empty list or tuple expected')
+            SDE_class = SDEs
+        else:
+            neq = 0
+            SDE_class = SDE
+            test_val = (test_val,)
+        ids = set()
+        for z in test_val:
+            ids.update(z.keys())
+        # consistency check
+        if ((q is not None and neq != q) or
+            (sources is not None and set(sources) != ids)):
+            raise TypeError(
+                'test evaluation of {} inconsistent with given '
+                "'q' or 'sources'".format(f))
 
     # avoid namespace conflicts inside SDE_wrapper
     log_flag = log
@@ -1857,16 +1860,17 @@ def integrate(sde=None, *, q=None, sources=None, log=False, addaxis=False):
     integration.
 
     Decorates a function representing the SDE or SDEs into the corresponding
-    integrator (a subclass of ``SDE`` or ``SDEs`` and of ``integrator``).
+    ``sdepy`` integrator.
 
     Parameters
     ----------
     sde : function
         Function to be wrapped. Its signature and values should be
-        as expected for the ``sde`` method of the ``SDE`` or ``SDEs`` classes.
+        as expected for the ``sde`` method of the ``sdepy.SDE`` or
+        ``sdepy.SDEs`` classes.
     q : int
         Number of equations. If ``None``, attempts a test evaluation
-        of ``sde`` to find out.
+        of ``sde`` to find out. ``q=0`` indicates a single equation.
     sources : set
         Stochasticity sources used in the equation. If ``None``,
         attempts a test evaluation of ``sde`` to find out.
@@ -1874,6 +1878,19 @@ def integrate(sde=None, *, q=None, sources=None, log=False, addaxis=False):
         Sets the ``log`` attribute for the wrapping class.
     addaxis : bool
         Sets the ``addaxis`` attribute for the wrapping class.
+
+    Returns
+    -------
+    A subclass of ``sdepy.SDE`` or ``sdepy.SDEs`` as appropriate,
+    and of ``sdepy.integrator``, with the given ``sde``
+    cast as its ``sde`` method.
+
+    Notes
+    -----
+    To prevent a test evaluation of ``sde``, explicitly provide
+    the intended ``q`` and ``sources`` as keyword arguments to ``integrate()``.
+    The test evaluation is attempted as ``sde()`` and, upon failure,
+    again as ``sde(1., 1.)``.
 
     Examples
     --------

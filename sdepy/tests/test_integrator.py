@@ -397,17 +397,21 @@ def test_SDE():
 
     # SDE class from integrate
     # ------------------------
-    @integrate(q=1, sources={'dw', 'dt'})
+    # without test evaluation (single equation specified by 'q=0')
+    @integrate(q=0, sources={'dw', 'dt'})
     def f_process(t, x):
         return {'dt': 1, 'dw': 1}
     assert_(issubclass(f_process, SDE))
-    assert_(issubclass(f_process, SDEs))  # FIXME: should be SDE subclass only
+    assert_(not issubclass(f_process, SDEs))
+    x = f_process(x0=1, paths=11, steps=30)(t)
 
+    # with test evaluation
     @integrate
     def f_process(t, x):
         return {'dt': 1, 'dw': 1}
     assert_ (issubclass(f_process, SDE))
-    assert_(not issubclass(f_process, SDEs))  # this is ok
+    assert_(not issubclass(f_process, SDEs))
+    x = f_process(x0=1, paths=11, steps=30)(t)
 
     # test errors
     # -----------
@@ -445,3 +449,35 @@ def test_SDE():
     # SDEs: wrong sde entry
     f_process.sde = lambda self, t, x, y: ({'dt': 1}, {'dzzz': 1})
     assert_raises(KeyError, f_process(x0=(1,)*2, paths=11, steps=30), t)
+
+    # integrate errors
+    # ----------------
+    # no test evaluation of f_process
+    @integrate(q=0, sources={'dt', 'dw'})
+    def f_process(t, x):
+        raise ValueError
+
+    # test evaluation ok
+    @integrate(q=2)
+    def f_process(t, x, y=1.):
+        return {'dt': 1}, {'dw': 1}
+    xs = f_process(x0=(1,)*2, paths=11, steps=30)(t)
+
+    # test evaluation inconsistent with declared q or sources
+    def err():
+        @integrate(q=1)
+        def f_process(t, x=1., y=1.):
+            return {'dt': 1}, {'dw': 1}
+    assert_raises(TypeError, err)
+    def err():
+        @integrate(sources={'dw'})
+        def f_process(t, x=1., y=1.):
+            return {'dt': 1}, {'dw': 1}
+    assert_raises(TypeError, err)
+
+    # test evaluation fails
+    def err():
+        @integrate
+        def f_process(t, x):
+            raise ValueError
+    assert_raises(TypeError, err)
