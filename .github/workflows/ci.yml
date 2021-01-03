@@ -11,14 +11,17 @@ jobs:
       - uses: actions/setup-python@v2
         with:
           python-version: 3.8
-      - run: python --version
-      - run: |
-          pip install numpy==1.18.3 scipy==1.4.1
+      - name: Inspect versions
+        run: |
+          python --version
           python -c 'import setuptools; print(f"{setuptools.__version__=}")'
+      - name: Build
+        run: |
+          pip install numpy==1.18.3 scipy==1.4.1
           rm --force ./dist/*
           python setup.py sdist bdist_wheel
-          echo ---------- ls
-          ls dist
+      - name: List build results
+        run: ls dist
       - uses: actions/upload-artifact@v2
         with:
           name: dist
