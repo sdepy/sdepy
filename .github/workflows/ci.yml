@@ -97,19 +97,21 @@ jobs:
       - name: Setup tests
         run: |
           python runtests.py 'setup_tests()'
-          cd ./build/tests
       - name: Run fast tests
         if: ${{ matrix.fast }}
         run: |
+          cd ./build/tests
           python runtests.py 'no_source()' 'run_fast()'
       - name: Run full tests without coverage
         if: ${{ matrix.full }}
         run: |
+          cd ./build/tests
           python runtests.py 'no_source()' 'run_full()'
           python runtests.py 'run_quickguide()'
       - name: Run full tests with coverage
         if: ${{ matrix.full-with-coverage }}
         run: |
+          cd ./build/tests
           coverage run --rcfile=../../.coveragerc runtests.py 'no_source()' 'run_full()'
           python runtests.py 'run_quickguide()'
           codecov
