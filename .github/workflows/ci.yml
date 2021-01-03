@@ -18,7 +18,8 @@ jobs:
           readlink -f .
           ls
           rm --force ./dist/*
-          python setup.py sdist
+          python setup.py bdist_wheel
+          echo ---------- ls
           ls dist
           exit 1
       - uses: actions/upload-artifact@v2
