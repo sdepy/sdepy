@@ -13,15 +13,12 @@ jobs:
           python-version: 3.8
       - run: python --version
       - run: |
-          pip install numpy==1.18.3 scipy==1.4.1 pytest==5.4.1
+          pip install numpy==1.18.3 scipy==1.4.1
           python -c 'import setuptools; print(f"{setuptools.__version__=}")'
-          readlink -f .
-          ls
           rm --force ./dist/*
-          python setup.py bdist_wheel
+          python setup.py sdist bdist_wheel
           echo ---------- ls
           ls dist
-          exit 1
       - uses: actions/upload-artifact@v2
         with:
           name: dist
