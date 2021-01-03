@@ -16,6 +16,7 @@ jobs:
           pip install numpy==1.18.3 scipy==1.4.1 pytest==5.4.1
           python -c 'import setuptools; print(f"{setuptools.__version__=}")'
           readlink -f .
+          ls
           exit 1
           rm --force ./dist/*
           python setup.py sdist bdist_wheel
