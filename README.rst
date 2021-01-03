@@ -44,7 +44,7 @@ Start here
    :target: https://sdepy.readthedocs.io/en/v1.1.1
    :alt: Documentation Status
 
-.. |ci| image:: https://github.com/m-cip/sdepy/workflows/CI/badge.svg?branch=ci
+.. |ci| image:: https://github.com/sdepy/sdepy/workflows/CI/badge.svg?branch=master
     :target: https://github.com/sdepy/sdepy/actions
 
 .. |codecov| image:: https://codecov.io/gh/sdepy/sdepy/branch/master/graph/badge.svg
