@@ -13,6 +13,7 @@ jobs:
           python-version: 3.8
       - run: python --version
       - run: |
+          pip install numpy==1.18.3 scipy==1.4.1 pytest==5.4.1
           rm --force ./dist/*
           python setup.py sdist bdist_wheel
       - uses: actions/upload-artifact@v2
