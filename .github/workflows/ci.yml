@@ -6,19 +6,20 @@ jobs:
   build:
     name: Build sdepy package
     runs-on: ubuntu-20.04
-    - uses: actions/checkout@v2
-    - uses: actions/setup-python@v2
-      with:
-        python-version: 3.8
-    - run: python --version
-    - run: |
-        rm --force ./dist/*
-        python setup.py sdist bdist_wheel
-    - uses: actions/upload-artifact@v2
-      with:
-        name: dist
-        path: ./dist
-        retention-days: 1
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+      - run: python --version
+      - run: |
+          rm --force ./dist/*
+          python setup.py sdist bdist_wheel
+      - uses: actions/upload-artifact@v2
+        with:
+          name: dist
+          path: ./dist
+          retention-days: 1
 
   test:
     name: >
