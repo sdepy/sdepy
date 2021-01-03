@@ -15,6 +15,7 @@ jobs:
         run: |
           python --version
           python -c 'import setuptools; print(f"{setuptools.__version__=}")'
+
       - name: Build
         run: |
           pip install numpy==1.18.3 scipy==1.4.1
@@ -95,6 +96,10 @@ jobs:
         run: |
           echo installing ./dist/sdepy*.whl
           pip install --no-deps ./dist/sdepy*.whl
+      - name: Inspect versions
+        run: |
+          python --version
+          pip list | grep 'numpy\|scipy\|pytest\|matplotlib\|coverage\|codecov\|sdepy'
 
       # tests
       - name: Setup tests
