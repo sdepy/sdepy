@@ -127,4 +127,6 @@ jobs:
           cd ./build/tests
           coverage run --rcfile=../../.coveragerc runtests.py 'no_source()' 'run_full()'
           python runtests.py 'run_quickguide()'
-          codecov
+      - name: Upload to codecov
+        if: ${{ matrix.full-with-coverage }}
+        run: codecov
