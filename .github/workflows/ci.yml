@@ -1,0 +1,132 @@
+name: CI
+on: [push]
+
+
+jobs:
+
+  # build sdepy
+  # -----------
+  build:
+    name: Build sdepy package
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+      - name: Install dependencies
+        run: pip install numpy==1.18.3 scipy==1.4.1
+      - name: Inspect versions
+        run: |
+          python --version
+          pip list | grep 'numpy\|scipy\|setuptools'
+      - name: Build
+        run: |
+          rm --force ./dist/*
+          python setup.py sdist bdist_wheel
+      - name: List build results
+        run: ls dist
+      - uses: actions/upload-artifact@v2
+        with:
+          name: dist
+          path: ./dist
+          retention-days: 1
+
+  # test sdepy
+  # ----------
+  test:
+    name: Test python==${{ matrix.py }} ${{ matrix.dependencies }}
+    runs-on: ubuntu-20.04
+    needs: build
+
+    strategy:
+      matrix:
+        include:
+          - name: Fast tests with minimal requirements
+            py: 3.5
+            dependencies: numpy==1.15.2 scipy==0.19.1 pytest==3.8.1
+            fast: true
+            full: false
+            full-with-coverage: false
+          - name: Fast tests, python 3.5, dependencies >= minimal
+            py: 3.5
+            dependencies: numpy>=1.15.2 scipy>=0.19.1 pytest>=3.8.1
+            fast: true
+            full: false
+            full-with-coverage: false
+          - name: Fast tests, python 3.6, dependencies >= minimal
+            py: 3.6
+            dependencies: numpy>=1.15.2 scipy>=0.19.1 pytest>=3.8.1
+            fast: true
+            full: false
+            full-with-coverage: false
+          - name: Full python 3.7 tests with specified dependencies
+            py: 3.7
+            dependencies: numpy==1.18.3 scipy==1.4.1 pytest==5.4.1
+            fast: false
+            full: true
+            full-with-coverage: false
+          - name: Full python 3.8 tests with specified dependencies, coverage
+            py: 3.8
+            dependencies: numpy==1.18.3 scipy==1.4.1 pytest==5.4.1
+            fast: false
+            full: false
+            full-with-coverage: true
+
+    steps:
+
+      # checkout and recover artifact
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.py }}
+      - run: python --version
+      - uses: actions/download-artifact@v2
+        with:
+          name: dist
+          path: ./dist
+
+      # install dependencies and artifact
+      - name: Install dependencies
+        run: |
+          pip install ${{ matrix.dependencies }}
+      - name: Install matplotlib # needed for quickguide doctests
+        if: ${{ matrix.full || matrix.full-with-coverage }}
+        run: pip install matplotlib>=3.1
+      - name: Install coverage packages
+        if: ${{ matrix.full-with-coverage }}
+        run: |
+          pip install coverage>=4.5.1 codecov>=2.0.15
+      - name: Install sdepy
+        run: |
+          echo installing ./dist/sdepy*.whl
+          pip install --no-deps ./dist/sdepy*.whl
+      - name: Inspect versions
+        run: |
+          python --version
+          pip list | grep 'numpy\|scipy\|pytest\|matplotlib\|coverage\|codecov\|sdepy'
+
+      # tests
+      - name: Setup tests
+        run: |
+          python runtests.py 'setup_tests()'
+      - name: Run fast tests
+        if: ${{ matrix.fast }}
+        run: |
+          cd ./build/tests
+          python runtests.py 'no_source()' 'run_fast()'
+      - name: Run full tests without coverage
+        if: ${{ matrix.full }}
+        run: |
+          cd ./build/tests
+          python runtests.py 'no_source()' 'run_full()'
+          python runtests.py 'run_quickguide()'
+      - name: Run full tests with coverage
+        if: ${{ matrix.full-with-coverage }}
+        run: |
+          cd ./build/tests
+          coverage run --rcfile=../../.coveragerc runtests.py 'no_source()' 'run_full()'
+          python runtests.py 'run_quickguide()'
+      - name: Upload to codecov
+        if: ${{ matrix.full-with-coverage }}
+        run: codecov

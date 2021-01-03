@@ -46,6 +46,7 @@ if __name__ == '__main__':
             'Unix',
             ],
         python_requires='>=3.5',
+        setup_requires=['numpy>=1.15.2', 'scipy>=0.19.1', 'wheel'],
         install_requires=['numpy>=1.15.2', 'scipy>=0.19.1'],
         packages=[
             'sdepy',

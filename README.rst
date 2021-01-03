@@ -1,7 +1,7 @@
 =====
 SdePy
 =====
-|readthedocs|  |travis|  |codecov|
+|ci|  |codecov|  |readthedocs|
 
 The SdePy package provides tools to state and numerically
 integrate Ito Stochastic Differential Equations (SDEs), including equations
@@ -44,8 +44,8 @@ Start here
    :target: https://sdepy.readthedocs.io/en/v1.1.1
    :alt: Documentation Status
 
-.. |travis| image:: https://travis-ci.org/sdepy/sdepy.svg?branch=v1.1.1
-    :target: https://travis-ci.org/sdepy/sdepy
+.. |ci| image:: https://github.com/sdepy/sdepy/workflows/CI/badge.svg?branch=master
+    :target: https://github.com/sdepy/sdepy/actions
 
 .. |codecov| image:: https://codecov.io/gh/sdepy/sdepy/branch/master/graph/badge.svg
   :target: https://codecov.io/gh/sdepy/sdepy
