@@ -26,12 +26,15 @@ def getdir(file):
 # this script may run with current directory set
 # either to the package home directory . or to ./build/tests
 SCRIPT_DIR = getdir(__file__)
+SCRIPT_NAME = os.path.split(__file__)[-1]
 ishome = os.path.exists(os.path.join(SCRIPT_DIR, 'doc', 'quickguide.rst'))
 HOME_DIR = SCRIPT_DIR if ishome else os.path.join(
     SCRIPT_DIR, os.pardir, os.pardir)
 assert os.path.exists(os.path.join(HOME_DIR, 'doc', 'quickguide.rst'))
 TEST_DIR = os.path.join(HOME_DIR, 'build', 'tests')
-if not ishome:
+if ishome:
+    assert os.path.samefile(SCRIPT_DIR, HOME_DIR)
+else:
     assert os.path.samefile(SCRIPT_DIR, TEST_DIR)
 
 # probe location of package to be tested
@@ -47,11 +50,12 @@ def print_info():
     print('script dir = ', os.path.abspath(SCRIPT_DIR))
     print('home dir =   ', os.path.abspath(HOME_DIR))
     print('test dir =   ', os.path.abspath(TEST_DIR))
-    print('package dir =', os.path.abspath(PACKAGE_DIR))
+    print('sdepy dir =  ', os.path.abspath(PACKAGE_DIR))
+    print('sdepy version = ', sdepy.__version__)
     print('python version =', python_version)
     print('numpy version = ', numpy_version)
     print('scipy version = ', scipy_version)
-    print('pytest version =  ', pytest_version, '\n')
+    print('pytest version =', pytest_version, '\n')
     return 0
 
 
@@ -74,8 +78,8 @@ def setup_tests():
     """
     if not os.path.exists(TEST_DIR):
         os.makedirs(TEST_DIR)
-    shutil.copyfile(os.path.join(HOME_DIR, __file__),
-                    os.path.join(TEST_DIR, __file__))
+    shutil.copyfile(os.path.join(HOME_DIR, SCRIPT_NAME),
+                    os.path.join(TEST_DIR, SCRIPT_NAME))
     return 0
 
 
