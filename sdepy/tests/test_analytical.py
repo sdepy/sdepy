@@ -128,7 +128,7 @@ ARGS[sp.kou_log_pdf] = \
 # ------------------------
 
 def test_warnings():
-    if True:
+    if False:
         # raises a warning in python 3.9
         # (used to test runtests.py script with warnings=='fail')
         math.factorial(10.)

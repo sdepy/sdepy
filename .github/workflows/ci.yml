@@ -40,7 +40,7 @@ jobs:
     needs: build
 
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         include:
           - name: Fast python 3.5 tests with minimal requirements
