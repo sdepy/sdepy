@@ -4,6 +4,7 @@ FORMAL TESTS ON ANALYTICAL RESULTS
 ==================================
 """
 from .shared import *
+import math
 
 
 # -------------------------------
@@ -125,6 +126,13 @@ ARGS[sp.kou_log_pdf] = \
 # ------------------------
 # tests
 # ------------------------
+
+def test_warnings():
+    if True:
+        # raises a warning in python 3.9
+        # (used to test runtests.py script with warnings=='fail')
+        math.factorial(10.)
+
 
 def test_analytical():
     np.random.seed(SEED)
