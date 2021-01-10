@@ -12,4 +12,4 @@ doc/generated/*
 build/*
 dist/*
 *egg-info/*
-
+alias.sh
