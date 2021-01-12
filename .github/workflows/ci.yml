@@ -141,4 +141,4 @@ jobs:
         if: ${{ matrix.full-with-coverage }}
         run: |
           cd ./build/tests
-          codecov
+          codecov --required
