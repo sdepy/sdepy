@@ -121,13 +121,13 @@ jobs:
         run: |
           cd ./build/tests
           python runtests.py 'no_source()' \
-            "run_fast(warnings='${{ matrix.warnings }}')"
+            "run('fast', warnings='${{ matrix.warnings }}')"
       - name: Run full tests without coverage
         if: ${{ matrix.full }}
         run: |
           cd ./build/tests
           python runtests.py 'no_source()' \
-            "run_full(warnings='${{ matrix.warnings }}')"
+            "run('full', doctests=True, warnings='${{ matrix.warnings }}')"
           python runtests.py 'run_quickguide()'
       - name: Run full tests with coverage
         if: ${{ matrix.full-with-coverage }}
@@ -135,7 +135,7 @@ jobs:
           cd ./build/tests
           coverage run --rcfile=../../.coveragerc \
             runtests.py 'no_source()' \
-            "run_full(warnings='${{ matrix.warnings }}')"
+            "run('full', doctests=True, warnings='${{ matrix.warnings }}')"
           python runtests.py 'run_quickguide()'
       - name: Upload to codecov
         if: ${{ matrix.full-with-coverage }}

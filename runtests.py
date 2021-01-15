@@ -137,31 +137,16 @@ def run_quickguide():
         ).failed
 
 
-def run(warnings='pass', **args):
+def run(label='fast', doctests=False, warnings='pass'):
     """
     Run tests with given options
     """
     print_info()
-    assert warnings in ('pass', 'fail')
-    args = {**args,
-            'pytest_args': ('-W', 'error::Warning')
-            if warnings == 'fail' else ()
-            }
-    return int(not test(**args))
-
-
-def run_fast(warnings='pass'):
-    """
-    Run fast tests
-    """
-    return run(label='fast', warnings=warnings)
-
-
-def run_full(warnings='pass'):
-    """
-    Run full tests including tests marked 'slow' and doctests
-    """
-    return run(label='full', doctests=True, warnings=warnings)
+    pytest_args = {'pass': (),
+                   'fail': ('-W', 'error::Warning')}
+    return int(not test(
+        label=label, doctests=doctests,
+        pytest_args=pytest_args[warnings]))
 
 
 def run_insane(warnings='pass'):
@@ -179,7 +164,7 @@ def run_insane(warnings='pass'):
     print('------------------\n')
 
     # run default tests
-    results.append(run_fast(warnings=warnings))
+    results.append(run('fast', warnings=warnings))
 
     # run quickguide doctests
     count_quickguide = run_quickguide()
@@ -193,7 +178,7 @@ def run_insane(warnings='pass'):
     for k in ('shortcuts', 'all', None):
         _config.KFUNC = k
         reload()
-        results.append(run_full(warnings=warnings))
+        results.append(run('full', doctests=True, warnings=warnings))
 
     # run quantitative tests with high resolution
     # and maximum code coverage
@@ -203,7 +188,7 @@ def run_insane(warnings='pass'):
     _config.QUANT_TEST_MODE = 'HD'
     _config.KFUNC = None
     reload()
-    results.append(run(label='quant or config', warnings=warnings))
+    results.append(run('quant or config', warnings=warnings))
 
     # summarize results
     count_failures = sum(results)
@@ -227,9 +212,9 @@ python runtests.py command1 command2 ...
 Available commands ('.' is the package home directory):
 
 """
-for command in (setup_tests, exit_tests, no_source,
-                run_quickguide,
-                run, run_fast, run_full, run_insane):
+for command in (setup_tests, exit_tests,
+                print_info, no_source,
+                run_quickguide, run, run_insane):
     usage += command.__name__ + '(): ' + command.__doc__ + '\n'
 
 if __name__ == '__main__':
