@@ -91,6 +91,8 @@ across one million paths takes seconds, one million time steps across
 100 paths takes minutes.
 """
 
+import sys
+import warnings
 from .infrastructure import *
 from .integration import *
 from .analytical import *
@@ -100,10 +102,10 @@ from .shortcuts import *
 from .tests.shared import _pytest_tester
 test = _pytest_tester(__name__)
 
-__version__ = '1.1.2-dev'
+__version__ = '1.1.2-dev0'
 
-
-_exclude = ('np', 'numpy', 'scipy',
+_exclude = ('sys',
+            'np', 'numpy', 'scipy',
             'exp', 'log', 'sqrt',
             'bisect', 'inspect', 'warnings',
             'infrastructure',
@@ -116,8 +118,15 @@ _exclude = ('np', 'numpy', 'scipy',
 
 _include = ('__version__',)
 
-
 __all__ = [s for s in dir() if
            not s.startswith('_') and s not in _exclude]
 
 __all__ += _include
+
+if sys.version_info[:2] <= (3, 5):
+    if not sys.warnoptions:
+        warnings.filterwarnings('default', category=DeprecationWarning)
+    warnings.warn('The use of SdePy with Python 3.5 is deprecated '
+                  'and will not be supported in future releases.',
+                  DeprecationWarning)
+

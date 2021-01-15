@@ -13,9 +13,9 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v2
         with:
-          python-version: 3.8
+          python-version: 3.9
       - name: Install dependencies
-        run: pip install numpy==1.18.3 scipy==1.4.1
+        run: pip install numpy scipy
       - name: Inspect versions
         run: |
           python --version
@@ -40,38 +40,44 @@ jobs:
     needs: build
 
     strategy:
+      fail-fast: true
       matrix:
         include:
-          - name: Fast tests with minimal requirements
+          - name: Fast python 3.5 tests with minimal requirements
             py: 3.5
             dependencies: numpy==1.15.2 scipy==0.19.1 pytest==3.8.1
             fast: true
             full: false
             full-with-coverage: false
-          - name: Fast tests, python 3.5, dependencies >= minimal
-            py: 3.5
-            dependencies: numpy>=1.15.2 scipy>=0.19.1 pytest>=3.8.1
-            fast: true
-            full: false
-            full-with-coverage: false
-          - name: Fast tests, python 3.6, dependencies >= minimal
+            warnings: 'pass'
+          - name: Fast python 3.6 tests
             py: 3.6
-            dependencies: numpy>=1.15.2 scipy>=0.19.1 pytest>=3.8.1
+            dependencies: numpy scipy pytest
             fast: true
             full: false
             full-with-coverage: false
-          - name: Full python 3.7 tests with specified dependencies
+            warnings: 'pass'
+          - name: Fast python 3.7 tests
             py: 3.7
-            dependencies: numpy==1.18.3 scipy==1.4.1 pytest==5.4.1
+            dependencies: numpy scipy pytest
+            fast: true
+            full: false
+            full-with-coverage: false
+            warnings: 'pass'
+          - name: Full python 3.8 tests
+            py: 3.8
+            dependencies: numpy scipy pytest
             fast: false
             full: true
             full-with-coverage: false
-          - name: Full python 3.8 tests with specified dependencies, coverage
-            py: 3.8
-            dependencies: numpy==1.18.3 scipy==1.4.1 pytest==5.4.1
+            warnings: 'pass'
+          - name: Full python 3.9 tests with coverage
+            py: 3.9
+            dependencies: numpy scipy pytest
             fast: false
             full: false
             full-with-coverage: true
+            warnings: 'fail'
 
     steps:
 
@@ -114,19 +120,25 @@ jobs:
         if: ${{ matrix.fast }}
         run: |
           cd ./build/tests
-          python runtests.py 'no_source()' 'run_fast()'
+          python runtests.py 'no_source()' \
+            "run('fast', warnings='${{ matrix.warnings }}')"
       - name: Run full tests without coverage
         if: ${{ matrix.full }}
         run: |
           cd ./build/tests
-          python runtests.py 'no_source()' 'run_full()'
+          python runtests.py 'no_source()' \
+            "run('full', doctests=True, warnings='${{ matrix.warnings }}')"
           python runtests.py 'run_quickguide()'
       - name: Run full tests with coverage
         if: ${{ matrix.full-with-coverage }}
         run: |
           cd ./build/tests
-          coverage run --rcfile=../../.coveragerc runtests.py 'no_source()' 'run_full()'
+          coverage run --rcfile=../../.coveragerc \
+            runtests.py 'no_source()' \
+            "run('full', doctests=True, warnings='${{ matrix.warnings }}')"
           python runtests.py 'run_quickguide()'
       - name: Upload to codecov
         if: ${{ matrix.full-with-coverage }}
-        run: codecov
+        run: |
+          cd ./build/tests
+          codecov --required

@@ -26,12 +26,15 @@ def getdir(file):
 # this script may run with current directory set
 # either to the package home directory . or to ./build/tests
 SCRIPT_DIR = getdir(__file__)
+SCRIPT_NAME = os.path.split(__file__)[-1]
 ishome = os.path.exists(os.path.join(SCRIPT_DIR, 'doc', 'quickguide.rst'))
 HOME_DIR = SCRIPT_DIR if ishome else os.path.join(
     SCRIPT_DIR, os.pardir, os.pardir)
 assert os.path.exists(os.path.join(HOME_DIR, 'doc', 'quickguide.rst'))
 TEST_DIR = os.path.join(HOME_DIR, 'build', 'tests')
-if not ishome:
+if ishome:
+    assert os.path.samefile(SCRIPT_DIR, HOME_DIR)
+else:
     assert os.path.samefile(SCRIPT_DIR, TEST_DIR)
 
 # probe location of package to be tested
@@ -47,11 +50,12 @@ def print_info():
     print('script dir = ', os.path.abspath(SCRIPT_DIR))
     print('home dir =   ', os.path.abspath(HOME_DIR))
     print('test dir =   ', os.path.abspath(TEST_DIR))
-    print('package dir =', os.path.abspath(PACKAGE_DIR))
+    print('sdepy dir =  ', os.path.abspath(PACKAGE_DIR))
+    print('sdepy version = ', sdepy.__version__)
     print('python version =', python_version)
     print('numpy version = ', numpy_version)
     print('scipy version = ', scipy_version)
-    print('pytest version =  ', pytest_version, '\n')
+    print('pytest version =', pytest_version, '\n')
     return 0
 
 
@@ -74,8 +78,8 @@ def setup_tests():
     """
     if not os.path.exists(TEST_DIR):
         os.makedirs(TEST_DIR)
-    shutil.copyfile(os.path.join(HOME_DIR, __file__),
-                    os.path.join(TEST_DIR, __file__))
+    shutil.copyfile(os.path.join(HOME_DIR, SCRIPT_NAME),
+                    os.path.join(TEST_DIR, SCRIPT_NAME))
     return 0
 
 
@@ -133,44 +137,37 @@ def run_quickguide():
         ).failed
 
 
-def run_fast():
+def run(label='fast', doctests=False, warnings='pass'):
     """
-    Run fast tests
-    """
-    print_info()
-    return int(not test())
-
-
-def run_full():
-    """
-    Run full tests including tests marked 'slow' and doctests
+    Run tests with given options
     """
     print_info()
-    return int(not test('full', doctests=True))
+    pytest_args = {'pass': (),
+                   'fail': ('-W', 'error::Warning')}
+    return int(not test(
+        label=label, doctests=doctests,
+        pytest_args=pytest_args[warnings]))
 
 
-def run_insane():
+def run_insane(warnings='pass'):
     """
     Test package in its multiple configurations
-    (time consuming, not part of the travis.ci testing suite)
+    (time consuming, not part of the ci testing suite)
     """
     # needs matplotlib.pyplot to be installed
     # saves realized errors and plots in PACKAGE_DIR/tests/cfr
     print_info()
-    res = []
-
-    def run_tests(*var, **args):
-        res.append(int(not test(*var, **args)))
+    results = []
 
     print('------------------')
     print('RUNNING FULL TESTS')
     print('------------------\n')
 
     # run default tests
-    run_tests()
+    results.append(run('fast', warnings=warnings))
 
     # run quickguide doctests
-    res_quickguide = run_quickguide()
+    count_quickguide = run_quickguide()
 
     # run tests with maximum code coverage, in all
     # kfunc modes
@@ -181,7 +178,7 @@ def run_insane():
     for k in ('shortcuts', 'all', None):
         _config.KFUNC = k
         reload()
-        run_tests('full', doctests=True)
+        results.append(run('full', doctests=True, warnings=warnings))
 
     # run quantitative tests with high resolution
     # and maximum code coverage
@@ -191,16 +188,16 @@ def run_insane():
     _config.QUANT_TEST_MODE = 'HD'
     _config.KFUNC = None
     reload()
-    run_tests('quant or config')
+    results.append(run('quant or config', warnings=warnings))
 
     # summarize results
-    count_failures = sum(res)
+    count_failures = sum(results)
 
     print('\n--------------------')
     print('FULL TESTS COMPLETED')
     print('--------------------\n')
 
-    return count_failures + res_quickguide
+    return count_failures + count_quickguide
 
 
 # --------------------------------------
@@ -215,9 +212,9 @@ python runtests.py command1 command2 ...
 Available commands ('.' is the package home directory):
 
 """
-for command in (setup_tests, exit_tests, no_source,
-                run_quickguide,
-                run_fast, run_full, run_insane):
+for command in (setup_tests, exit_tests,
+                print_info, no_source,
+                run_quickguide, run, run_insane):
     usage += command.__name__ + '(): ' + command.__doc__ + '\n'
 
 if __name__ == '__main__':
