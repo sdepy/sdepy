@@ -76,34 +76,6 @@ def corr(a, b=None):
          for j in range(n)])
 
 
-# used to generate quickguide.py in
-# versions <= 1.1.0
-def getcode(in_, out, mode='w', header=''):
-    """
-    Convert documentation file to python code.
-
-    Parse doc file named 'in_', transform doctests
-    into executable code and the rest into comments,
-    and save output in file named 'out'.
-    Inserts 'header' at the top.
-    """
-    in_, out = str(pathlib.Path(in_)), str(pathlib.Path(out))
-    with open(in_) as i, open(out, mode) as o:
-        print(header, file=o)
-        sep = ''
-        while True:
-            a = i.readline()
-            a, EOF = a.strip(), a == ''
-            if EOF:
-                break
-            elif a[:3] in ('>>>', '...'):
-                print(a[4:], file=o)
-                sep = '\n\n'
-            else:
-                print((sep + '# ' + a) if a else sep + '#', file=o)
-                sep = ''
-
-
 def getnotebook(in_, out,
                 skip=0, header=(), magic='',
                 to_markdown=lambda x: x,
@@ -180,7 +152,7 @@ def quickguide_make(execute=True):
     out_executed = './dist/quickguide.ipynb'
     header = (
         '*This file, part of the* [SdePy](https://github.com/sdepy/sdepy) '
-        '*package* v{},\n'.format(sdepy.__version__),
+        '*package*,\n',
         '*was automatically generated from* `{}`\n'.format(in_),
         '\n',
         '-----------------------------------------------\n')
