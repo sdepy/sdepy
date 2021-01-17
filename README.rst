@@ -31,21 +31,21 @@ Start here
 ----------
 
 -  `Installation           <https://pypi.org/project/sdepy>`_: ``pip install sdepy``
--  `Quick Guide            <https://sdepy.readthedocs.io/en/v1.1.2/intro.html#id2>`_
-   (as `notebook           <https://nbviewer.jupyter.org/github/sdepy/sdepy-doc/blob/v1.1.2/quickguide.ipynb>`_)
--  `Documentation          <https://sdepy.readthedocs.io/en/v1.1.2>`_
-   (as `pdf                <https://readthedocs.org/projects/sdepy/downloads/pdf/v1.1.2>`_)
+-  `Quick Guide            <https://sdepy.readthedocs.io/en/latest/intro.html#id2>`_
+   (as `notebook           <https://nbviewer.jupyter.org/github/sdepy/sdepy-doc/blob/master/quickguide.ipynb>`_)
+-  `Documentation          <https://sdepy.readthedocs.io/en/latest>`_
+   (as `pdf                <https://readthedocs.org/projects/sdepy/downloads/pdf/latest>`_)
 -  `Source                 <https://github.com/sdepy/sdepy>`_
 -  `License                <https://github.com/sdepy/sdepy/blob/master/LICENSE.txt>`_
 -  `Bug Reports            <https://github.com/sdepy/sdepy/issues>`_
 
 
-.. |readthedocs| image:: https://readthedocs.org/projects/sdepy/badge/?version=v1.1.2
-   :target: https://sdepy.readthedocs.io/en/v1.1.2
+.. |readthedocs| image:: https://readthedocs.org/projects/sdepy/badge/?version=latest
+   :target: https://sdepy.readthedocs.io/en/latest
    :alt: Documentation Status
 
-.. |ci| image:: https://github.com/sdepy/sdepy/workflows/CI/badge.svg?branch=v1.1.2
+.. |ci| image:: https://github.com/sdepy/sdepy/workflows/CI/badge.svg?branch=master
     :target: https://github.com/sdepy/sdepy/actions
 
-.. |codecov| image:: https://codecov.io/gh/sdepy/sdepy/blob/v1.1.2/graph/badge.svg
+.. |codecov| image:: https://codecov.io/gh/sdepy/sdepy/blob/master/graph/badge.svg
   :target: https://codecov.io/gh/sdepy/sdepy
