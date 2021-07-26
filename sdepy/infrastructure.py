@@ -19,6 +19,26 @@ import warnings
 
 
 ########################################
+#  Default random number generator
+########################################
+
+# To use as sdepy default the legacy numpy random generator,
+# seeded with SEED, set
+# >>> sdepy.infrastructure.default_rng = np.random.RandomState(SEED)
+# To use the legacy global state, seeded via `np.random.seed(SEED)`, set
+# >>> sdepy.infrastructure.default_rng = np.random
+try:
+    default_rng = np.random.default_rng()
+    _rng_types = (np.random.Generator, np.random.RandomState,
+                  type(None))
+
+except AttributeError:
+    # ensure compatibility with legacy numpy and scipy versions
+    default_rng = np.random
+    _rng_types = (type(None))
+
+
+########################################
 #  Private functions for recurring tasks
 ########################################
 
@@ -1282,6 +1302,10 @@ class source:
         Shape of source values.
     dtype : data-type
         Data type of source values. Defaults to ``None``.
+    rng : numpy.random.Generator, or numpy.random.RandomState, or None
+        Random numbers generator used. If ``None``, use
+        ``sdepy.infrastructure.default_rng``, a global variabile
+        initialized on import to ``numpy.random.default_rng()``.
 
     Returns
     -------
@@ -1315,15 +1339,28 @@ class source:
     t
     """
 
-    def __init__(self, *, paths=1, vshape=(), dtype=None):
+    def __init__(self, *, paths=1, vshape=(), dtype=None, rng=None):
         self.paths, self.vshape, self.dtype = paths, vshape, dtype
         self.vshape = _shape_setup(self.vshape)
+        if not isinstance(rng, _rng_types):
+            raise TypeError(
+                f'rng should be an instance of `numpy.random.Generator` '
+                f'or `numpy.random.RandomState`, not of {type(rng)}. '
+                f'For legacy numpy versions, only `rng=None` is allowed.')
+        self._rng = default_rng if (rng is None) else rng
 
     def __call__(self, t, dt=None):
         """Realization of stochasticity source values or increments."""
         dt = 0 if dt is None else dt
         t, dt = np.asarray(t), np.asarray(dt)
         return t + dt + np.nan
+
+    @property
+    def rng(self):
+        # prevent modifications of the `rng` attribute (for `true_source`
+        # subclasses, such changes would silently fail to propagate
+        # to sources stored in `_dw`, `_dn` or `_dj` attributes).
+        return self._rng
 
     @property
     def size(self):
@@ -1358,6 +1395,10 @@ class wiener_source(source):
         Shape of source values.
     dtype : data-type
         Data type of source values. Defaults to ``None``.
+    rng : numpy.random.Generator, or numpy.random.RandomState, or None
+        Random numbers generator used. If ``None``, use
+        ``sdepy.infrastructure.default_rng``, a global variabile
+        initialized on import to ``numpy.random.default_rng()``.
     corr : array-like, or callable, or None
         Correlation matrix of the standard Wiener process increments,
         possibly time-dependent, or ``None`` for no correlations,
@@ -1435,9 +1476,9 @@ class wiener_source(source):
     ``dt`` intervals.
     """
 
-    def __init__(self, *, paths=1, vshape=(), dtype=None,
+    def __init__(self, *, paths=1, vshape=(), dtype=None, rng=None,
                  corr=None, rho=None):
-        super().__init__(paths=paths, vshape=vshape, dtype=dtype)
+        super().__init__(paths=paths, vshape=vshape, dtype=dtype, rng=rng)
 
         # get the correlation matrix from 'corr' and 'rho'
         self.corr = corr = _get_corr_matrix(corr, rho)
@@ -1463,15 +1504,15 @@ class wiener_source(source):
         corr = self.corr
         t, dt = np.broadcast_arrays(t, dt)
         tshape = dt.shape
-        # using np.random.normal and np.random.multivariate_normal,
+        # using numpy normal and multivariate_normal,
         # instead of scipy.stats.norm and scipy.stats.multivariate_normal
         # to imporve speed (aviod overhead of scipy.stats random variable
         # instantiation at each call)
         if corr is None:
             # --- handle uncorrelated samples (vshape may be any shape)
-            dz = np.random.normal(
+            dz = self.rng.normal(
                 0., 1., size=tshape + vshape + (paths,)
-               ).astype(dtype, copy=False)
+                ).astype(dtype, copy=False)
         else:
             # --- handle correlated samples
             M = vshape[-1]
@@ -1486,7 +1527,7 @@ class wiener_source(source):
                             'invalid correlation matrix shape {}'
                             .format(cov.shape))
                     cov = cov[..., 0]  # remove paths axis if present
-                dz = np.random.multivariate_normal(
+                dz = self.rng.multivariate_normal(
                     mean=mean, cov=cov, size=tshape + vshape[:-1] + (paths,)
                     ).astype(dtype, copy=False)
             else:
@@ -1502,7 +1543,7 @@ class wiener_source(source):
                                 'invalid correlation matrix shape {}'
                                 .format(cov.shape))
                         cov = cov[..., 0]  # remove paths axis if present
-                    dz[i] = np.random.multivariate_normal(
+                    dz[i] = self.rng.multivariate_normal(
                         mean=mean, cov=cov, size=vshape[:-1] + (paths,)
                         )
             # reshape dz to ``tshape + vshape + (paths,)``
@@ -1531,6 +1572,10 @@ class poisson_source(source):
         Shape of source values.
     dtype : data-type
         Data type of source values. Defaults to ``int``.
+    rng : numpy.random.Generator, or numpy.random.RandomState, or None
+        Random numbers generator used. If ``None``, use
+        ``sdepy.infrastructure.default_rng``, a global variabile
+        initialized on import to ``numpy.random.default_rng()``.
     lam : array-like, or callable
         Intensity of the Poisson process, possibly time-dependent.
         Should be an array of non-negative values, broadcastable to shape
@@ -1552,8 +1597,8 @@ class poisson_source(source):
     source
     """
 
-    def __init__(self, *, paths=1, vshape=(), dtype=int, lam=1.):
-        super().__init__(paths=paths, vshape=vshape, dtype=dtype)
+    def __init__(self, *, paths=1, vshape=(), dtype=int, rng=None, lam=1.):
+        super().__init__(paths=paths, vshape=vshape, dtype=dtype, rng=rng)
         self.lam = lam = _variable_param_setup(lam)
         lam_shape = _get_param_shape(lam)
         if lam_shape is not None:
@@ -1576,13 +1621,13 @@ class poisson_source(source):
         lam = self.lam
         dn = np.empty(tshape + vshape + (paths,),
                       dtype=dtype)
-        # using np.random.poisson instead of scipy.stats.poisson
+        # using numpy poisson instead of scipy.stats.poisson
         # to imporve speed (aviod overhead of scipy.stats random variable
         # instantiation at each call)
         for i in np.ndindex(tshape):
             L = (lam(t[i] + dt[i]/2) if callable(lam) else lam)
-            dn[i] = sign_dt[i]*np.random.poisson(abs_dt[i]*L,
-                                                 vshape + (paths,))
+            dn[i] = sign_dt[i]*self.rng.poisson(abs_dt[i]*L,
+                                                vshape + (paths,))
         return dn
 
 
@@ -1690,8 +1735,8 @@ class _exp_rv:
         self._s = np.sign(a)
         self._rv = scipy.stats.expon(scale=np.abs(a))
 
-    def rvs(self, size):
-        return self._s*self._rv.rvs(size)
+    def rvs(self, size, random_state=None):
+        return self._s*self._rv.rvs(size=size, random_state=random_state)
 
     def mean(self):
         return self._s*self._rv.mean()
@@ -1721,11 +1766,11 @@ class _double_exp_rv:
         self._rvxb = scipy.stats.expon(scale=b)
         self._rvu = scipy.stats.uniform(scale=1.)
 
-    def rvs(self, size):
+    def rvs(self, size, random_state=None):
         pa = self._pa
-        rvs_plus = self._rvxa.rvs(size)
-        rvs_minus = self._rvxb.rvs(size)
-        uniform = self._rvu.rvs(size)
+        rvs_plus = self._rvxa.rvs(size=size, random_state=random_state)
+        rvs_minus = self._rvxb.rvs(size=size, random_state=random_state)
+        uniform = self._rvu.rvs(size=size, random_state=random_state)
         return np.where(uniform <= pa, rvs_plus, -rvs_minus) + 0
 
     def mean(self):
@@ -1796,9 +1841,10 @@ def rvmap(f, y):
             yt = y(t) if callable(y) else y
 
             class new_yt_class:
-                def rvs(self, size):
-                    return (f(t, yt.rvs(size)) if time_dependent_f
-                            else f(yt.rvs(size)))
+                def rvs(self, size, random_state=None):
+                    yt_rvs = yt.rvs(size=size, random_state=random_state)
+                    return (f(t, yt_rvs) if time_dependent_f
+                            else f(yt_rvs))
 
             new_yt = new_yt_class()
             return new_yt
@@ -1806,8 +1852,8 @@ def rvmap(f, y):
     else:
 
         class new_y_class:
-            def rvs(self, size):
-                return f(y.rvs(size))
+            def rvs(self, size, random_state=None):
+                return f(y.rvs(size=size, random_state=random_state))
 
         new_y = new_y_class()
         return new_y
@@ -1842,9 +1888,17 @@ class cpoisson_source(source):
         Shape of source values.
     dtype : data-type
         Data type of source values. Defaults to ``None``.
-    dn : source or source class, optional
-        If given, ``dn`` is used as the underlying source of Poisson process
-        increments, overriding the ``ptype`` and ``lam`` parameters.
+    rng : numpy.random.Generator, or numpy.random.RandomState, or None
+        Random numbers generator used. If ``None``, use
+        ``sdepy.infrastructure.default_rng``, a global variabile
+        initialized on import to ``numpy.random.default_rng()``.
+        Used to generate Poisson process increments (unless ``dn`` is
+        explicilty given with its own ``dn.rng``) and ``y`` random variates.
+    dn : source or source class, or None
+        Underlying source of Poisson process increments. If a class, it
+        is used to instantiate the source; if a source, it is used as it is,
+        overriding the given ``ptype`` and ``lam`` parameters.
+        If ``None``, it is instantiated as a ``sdepy.poisson_source``.
     ptype : data-type
         Data type of Poisson process increments. Defaults to ``int``.
     lam : array-like, or callable
@@ -1853,12 +1907,13 @@ class cpoisson_source(source):
     y : distribution, or callable, or None
         Distribution of random variates to be compounded with the
         Poisson process increments, possibly time-dependent.
-        May be any ``scipy.stats`` distribution instance,
-        or any object exposing an ``rvs(shape)`` method
-        to generate independent random variates of the given shape,
-        or a callable with ``y(t)`` evaluating to such object.
-        The following preset distributions may be specified, possibly
-        with time-varying parameters:
+        May be any ``scipy.stats`` distribution instance, or any object
+        exposing an ``rvs`` method to be invoked with signature
+        ``rvs(size=output_shape, random_state=rng)`` to generate independent
+        random variates with given shape and generator, or a callable
+        with ``y(t)`` evaluating to such object. The following
+        preset distributions may be specified, possibly with time-varying
+        parameters:
           -  ``y=norm_rv(a, b)`` - normal distribution with mean ``a``
              and standard deviation ``b``.
           -  ``y=uniform_rv(a, b)`` - uniform distribution
@@ -1926,15 +1981,15 @@ class cpoisson_source(source):
         ``y`` random variates.
     """
 
-    def __init__(self, *, paths=1, vshape=(), dtype=None,
+    def __init__(self, *, paths=1, vshape=(), dtype=None, rng=None,
                  dn=None, ptype=int, lam=1.,
                  y=None):
-        super().__init__(paths=paths, vshape=vshape, dtype=dtype)
+        super().__init__(paths=paths, vshape=vshape, dtype=dtype, rng=rng)
 
         # setup of poisson source
         self.dn = _source_setup(dn, poisson_source,
-                                paths=self.paths, vshape=self.vshape,
-                                dtype=ptype, lam=lam)
+                                paths=paths, vshape=vshape,
+                                dtype=ptype, rng=rng, lam=lam)
 
         # mind not breaking the source protocol
         self.ptype = self.dn.dtype if hasattr(dn, 'dtype') else ptype
@@ -1942,6 +1997,20 @@ class cpoisson_source(source):
 
         # setup of random variable sampling source
         self.y = uniform_rv(a=0, b=1) if y is None else y
+
+    @staticmethod
+    def _y_rvs(rvs, size, rng):
+        """Wrap calls to `rvs` method of `y` for backward compatibility"""
+        try:
+            return rvs(size=size, random_state=rng)
+        except TypeError:
+            rv_sample = rvs(size=size)
+            warnings.warn(
+                'The use of cpoission_source with distributions '
+                'not accepting a `random_state` keyword argument '
+                'is deprecated, and will not be supported in future releases.',
+                DeprecationWarning)
+            return rv_sample
 
     def __call__(self, t, dt):
         """See cpoisson_source class documentation."""
@@ -1961,7 +2030,7 @@ class cpoisson_source(source):
             for j in range(1, nmax+1):
                 index = (dn_positive_i == j)
                 if index.any():
-                    y_sample = rv.rvs(size=(index.sum(), j))
+                    y_sample = self._y_rvs(rv.rvs, (index.sum(), j), self.rng)
                     dz[i][index] = sign_dt[i]*y_sample.sum(axis=-1)
                     y_value.append(y_sample)
         self.dn_value = dn
@@ -2098,7 +2167,7 @@ class true_source(source):
 
     Parameters
     ----------
-    paths, vshape, dtype
+    paths, vshape, dtype, rng
         See ``source`` class documentation.
     rtol : float, or 'max'
         relative tolerance used in assessing the coincidence
@@ -2131,10 +2200,10 @@ class true_source(source):
     new_outside
     """
 
-    def __init__(self, *, paths=1, vshape=(), dtype=None,
+    def __init__(self, *, paths=1, vshape=(), dtype=None, rng=None,
                  rtol='max', t0=0., z0=0.):
-        self.paths, self.vshape, self.dtype = paths, vshape, dtype
-        self.vshape = _shape_setup(self.vshape)
+        super().__init__(paths=paths, vshape=vshape, dtype=dtype, rng=rng)
+
         # time points are handled one by one,
         # their type is set to float
         self.rtol = np.finfo(float).resolution \
@@ -2359,16 +2428,16 @@ dw, source of standard Wiener process (brownian motion) increments with memory.
     See source and true_source methods.
     """
 
-    def __init__(self, *, paths=1, vshape=(), dtype=None,
+    def __init__(self, *, paths=1, vshape=(), dtype=None, rng=None,
                  corr=None, rho=None,
                  rtol='max', t0=0., z0=0.):
 
+        super().__init__(paths=paths, vshape=vshape, dtype=dtype, rng=rng,
+                         rtol=rtol, t0=t0, z0=z0)
         self._dw = wiener_source(paths=paths,
-                                 vshape=vshape, dtype=dtype,
+                                 vshape=vshape, dtype=dtype, rng=rng,
                                  corr=corr, rho=rho)
         self.corr = self._dw.corr
-        super().__init__(paths=paths, vshape=vshape, dtype=dtype,
-                         rtol=rtol, t0=t0, z0=z0)
 
     def new_outside(self, w, t, s):
         # approximate in case of time depentent correlations
@@ -2448,15 +2517,13 @@ class true_poisson_source(true_source):
     -------
     See ``source`` and ``true_source`` methods.
     """
-    def __init__(self, *, paths=1, vshape=(), dtype=int, lam=1.,
+    def __init__(self, *, paths=1, vshape=(), dtype=int, rng=None, lam=1.,
                  rtol='max', t0=0., z0=0):
 
-        super().__init__(paths=paths, vshape=vshape, dtype=dtype,
+        super().__init__(paths=paths, vshape=vshape, dtype=dtype, rng=rng,
                          rtol=rtol, t0=t0, z0=z0)
-        self._dn = poisson_source(paths=self.paths,
-                                  vshape=self.vshape,
-                                  dtype=self.dtype,
-                                  lam=lam)
+        self._dn = poisson_source(paths=paths, vshape=vshape, dtype=dtype,
+                                  rng=rng, lam=lam)
         self.lam = self._dn.lam
 
     def new_outside(self, n, t, s):
@@ -2467,7 +2534,7 @@ class true_poisson_source(true_source):
             return None
         p = (s - t1)/(t2 - t1)
         n = n2 - n1
-        return n1 + np.random.binomial(n, p, n.shape)
+        return n1 + self.rng.binomial(n, p, n.shape)
 
 
 class true_cpoisson_source(true_source):
@@ -2480,6 +2547,11 @@ class true_cpoisson_source(true_source):
         See ``cpoisson_source`` class documentation.
     rtol, t0, z0
         See ``true_source`` class documentation.
+    dn : true_poission_source, or None
+        If provided, it is used as the underlying source of Poisson process
+        increments with memory, overriding the given ``ptype`` and ``lam``.
+        If ``None`` (default), it is instantiated as
+        a ``sdepy.true_poission_source``.
 
     Returns
     -------
@@ -2507,18 +2579,18 @@ class true_cpoisson_source(true_source):
     -------
     See ``source`` and ``true_source`` methods.
     """
-    def __init__(self, *, paths=1, vshape=(), dtype=None,
+    def __init__(self, *, paths=1, vshape=(), dtype=None, rng=None,
                  rtol='max', t0=0., z0=0.,
                  dn=None, ptype=int, lam=1.,
                  y=None):
 
-        super().__init__(paths=paths, vshape=vshape, dtype=dtype,
+        super().__init__(paths=paths, vshape=vshape, dtype=dtype, rng=rng,
                          rtol=rtol, t0=t0, z0=z0)
         if dn is None:
             dn = true_poisson_source(paths=paths, vshape=vshape,
-                                     dtype=ptype, lam=lam)
-        self._dj = cpoisson_source(paths=self.paths,
-                                   vshape=self.vshape, dtype=self.dtype,
+                                     dtype=ptype, rng=rng, lam=lam)
+        self._dj = cpoisson_source(paths=paths, vshape=vshape,
+                                   dtype=dtype, rng=rng,
                                    dn=dn, y=y)  # ptype, lam are set by dn
         self.ptype, self.lam = self._dj.ptype, self._dj.lam
         self.dn = self._dj.dn

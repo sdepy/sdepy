@@ -273,7 +273,7 @@ def test_kfunc_params():
 
     for X in (sp.wiener_source, sp.dw):
         assert_(kf(X)(paths=2).params ==
-                {'paths': 2, 'vshape': (), 'dtype': None,
+                {'paths': 2, 'vshape': (), 'dtype': None, 'rng': None,
                  'corr': None, 'rho': None})
 
     for X in (sp.odd_wiener_source, sp.odd_dw):
@@ -284,14 +284,14 @@ def test_kfunc_params():
 
     for X in (sp.true_wiener_source, sp.true_dw):
         assert_(kf(X)(paths=2).params ==
-                {'paths': 2, 'vshape': (), 'dtype': None,
+                {'paths': 2, 'vshape': (), 'dtype': None, 'rng': None,
                  'rtol': 'max', 't0': 0., 'z0': 0.,
                 'corr': None, 'rho': None})
 
     for X in (sp.poisson_source, sp.dn):
         assert_(kf(X)(lam=2, dtype=np.float32).params ==
                 {'paths': 1, 'vshape': (),
-                 'dtype': np.float32, 'lam': 2})
+                 'dtype': np.float32, 'rng': None, 'lam': 2})
 
     # processes
     # ---------

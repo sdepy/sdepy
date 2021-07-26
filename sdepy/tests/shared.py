@@ -84,6 +84,7 @@ class _pytest_tester:
 
 # in all test modules, 'sp' is the package
 # to be tested
+import sdepy
 import sdepy as sp
 from sdepy import _config
 
@@ -109,7 +110,7 @@ KFUNC = _config.KFUNC
 # (see eps function below)
 EPS_FACTOR = 16
 
-# each testing routine should call np.random.seed(SEED)
+# each testing routine should call np.random.seed(SEED) or legacy_seed(SEED)
 SEED = 1234
 
 # DIR is the directory used, in quantitative tests,
@@ -155,6 +156,18 @@ else:
     quant = slow = lambda f: f
 
 
+def legacy_seed(seed):
+    """Use instead of np.random.seed(seed), to use the legacy
+    numpy random numbers, with the given seed, as sdepy default.
+    """
+    if sdepy.infrastructure.default_rng == np.random:
+        np.random.seed(seed)
+    else:
+        sdepy.infrastructure.default_rng = np.random.RandomState(seed)
+    # uncomment this to test using PCG64:
+    # sdepy.infrastructure.default_rng = np.random.default_rng(seed)
+
+
 def do(testing_function, *case_iterators, **args):
     """call a test function f across all test cases exposed
     in case_iterators, passing keyword arguments in args"""
@@ -173,10 +186,6 @@ def eps(dtype):
         return np.finfo(dtype).resolution * EPS_FACTOR
     else:
         return 0
-
-
-def choice(list_):
-    return list_[np.random.randint(len(list_))]
 
 
 class const_errors:
@@ -247,7 +256,7 @@ def plot_histogram(hist, **kwargs):
 message = """
 A quantitative test has failed, running in {} definition with {} paths.
 This test relies on the reproducibility of expected errors, once
-random numbers have been seeded with np.random.seed({}), and its failure
+random numbers have been seeded with np.random.RandomState({}), and its failure
 may not necessarily indicate that the package is broken.
 Consider changing the test configuration in
 {} by setting

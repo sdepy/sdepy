@@ -782,7 +782,7 @@ def test_piecewise():
     vshape = [(3,), (2, 3)]
     mode = [None, 'mid', 'forward', 'backward']
     shift = [0, -2, -4]
-    do(tst_piecewise, [np.float], paths, vshape, mode, shift)
+    do(tst_piecewise, [float], paths, vshape, mode, shift)
     do(tst_piecewise,      dtype, paths,   [()], mode,   [0])
 
     with assert_raises(ValueError):

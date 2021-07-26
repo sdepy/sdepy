@@ -54,8 +54,8 @@ def montecarlo_workflow(shape, paths, dtype):
     a = montecarlo(bins='auto')
     assert_raises(ValueError, a.histogram)
     for i in range(10):
-        sample = np.random.normal(size=shape + (PATHS,)).astype(dtype)
-        sample *= (1+np.arange(size)).reshape(shape + (1,))
+        sample = (100*np.random.normal(size=shape + (PATHS,))).astype(dtype)
+        sample *= (1 + np.arange(size)).reshape(shape + (1,))
         a.update(sample)
     assert_(a.paths == PATHS*10)
 
@@ -63,7 +63,7 @@ def montecarlo_workflow(shape, paths, dtype):
     str(a)
     x = np.linspace(-3*size, 3*size, 100)
     for k in range(5):
-        i = choice(indexes)
+        i = (indexes)[-1]
         a[i].pdf(x)  # default
         a[i].pdf(x, bandwidth=.7)  # gaussian kde with explicit bandwidth
         a[i].pdf(x, kind='linear', method='interp')

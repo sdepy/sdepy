@@ -226,7 +226,7 @@ def test_source_specific():
     val = 2.
 
     class const_rv:
-        def rvs(self, size):
+        def rvs(self, size, random_state):
             return np.full(size, fill_value=val)
 
     src = cpoisson_source(lam=1., paths=100, ptype=np.int16,
@@ -235,6 +235,21 @@ def test_source_specific():
     assert_allclose(n*val, s, rtol=eps(s.dtype))
     s, n = src(0, 100), src.dn_value
     assert_allclose(n*val, s, rtol=eps(s.dtype))
+
+    # compound poisson tests with legacy rv signature
+    val = 2.
+
+    class const_rv_legacy:
+        def rvs(self, size):
+            return np.full(size, fill_value=val)
+
+    src = cpoisson_source(lam=1., paths=100, ptype=np.int16,
+                              y=const_rv_legacy())
+    with assert_warns(DeprecationWarning):
+        s, n = src(0, 1), src.dn_value
+        assert_allclose(n*val, s, rtol=eps(s.dtype))
+        s, n = src(0, 100), src.dn_value
+        assert_allclose(n*val, s, rtol=eps(s.dtype))
 
     # true sources tests
     for cls in (true_wiener_source, true_poisson_source, true_cpoisson_source,
