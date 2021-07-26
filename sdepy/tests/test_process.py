@@ -20,7 +20,7 @@ def test_import():
 
 # enumerate test cases and launch tests
 def test_constructor():
-    np.random.seed(SEED)
+    legacy_seed(SEED)
 
     # do cases
     t = [2., (5.,), (0, 1.), np.linspace(0., 4., 12)]
@@ -45,7 +45,7 @@ def process_constructor(t, paths, vshape, dtype):
         tt = tt.reshape(1)
 
     # x constructor
-    x = np.random.random(tt.shape + vshape + (paths,))
+    x = rng().random(tt.shape + vshape + (paths,))
     p = process(t, x=x, dtype=dtype)
     assert_array_equal(p.t, tt)
     assert_(isinstance(p.t, np.ndarray))
@@ -54,7 +54,7 @@ def process_constructor(t, paths, vshape, dtype):
     assert_(p.dtype == np.dtype(dtype))
 
     # v constructor
-    v = np.random.random(tt.shape + vshape)
+    v = rng().random(tt.shape + vshape)
     p = process(t, v=v, dtype=dtype)
     assert_array_equal(p.t, tt)
     assert_(isinstance(p.t, np.ndarray))
@@ -63,7 +63,7 @@ def process_constructor(t, paths, vshape, dtype):
     assert_(p.dtype == np.dtype(dtype))
 
     # c constructor
-    c = np.random.random(vshape)
+    c = rng().random(vshape)
     p = process(t, c=c, dtype=dtype)
     assert_array_equal(p.t, tt)
     assert_(isinstance(p.t, np.ndarray))
@@ -98,7 +98,7 @@ def process_constructor(t, paths, vshape, dtype):
 
 # enumerate test cases and launch tests
 def test_broadcasting():
-    np.random.seed(SEED)
+    legacy_seed(SEED)
 
     # do cases
     t = [np.linspace(0., 4., 12)]
@@ -110,9 +110,9 @@ def test_broadcasting():
 
 # case testing
 def process_broadcasting(t, paths, vshape):
-    p = process(t, x=np.random.random(t.shape + vshape + (paths,)))
+    p = process(t, x=rng().random(t.shape + vshape + (paths,)))
     q = process(t.copy(),
-                x=np.random.random(t.shape + vshape + (paths,)))
+                x=rng().random(t.shape + vshape + (paths,)))
 
     # same processes
     a1 = p + q
@@ -195,7 +195,7 @@ def process_broadcasting(t, paths, vshape):
 
 # enumerate test cases and launch tests
 def test_interp():
-    np.random.seed(SEED)
+    legacy_seed(SEED)
 
     # do cases on t, s, paths and vshape
     t = [2+np.zeros(1), np.linspace(1., 4., 12)]
@@ -261,7 +261,7 @@ def process_interp(t, s, paths, vshape, dtype, kind):
 
 # simple stand alone test on interpolated values
 def test_interp_values():
-    np.random.seed(SEED)
+    legacy_seed(SEED)
 
     # check interpolated values
     p = process(t=(1, 2, 3.), v=(1, 4, 9.))
@@ -277,7 +277,7 @@ def test_interp_values():
 
 # enumerate test cases and launch tests
 def test_t_getitem():
-    np.random.seed(SEED)
+    legacy_seed(SEED)
 
     # do cases
     t = [np.linspace(1., 4., 12)]
@@ -288,7 +288,7 @@ def test_t_getitem():
 
 # case testing
 def process_t_getitem(t, paths, vshape):
-    p = process(t, x=np.random.random(t.shape + vshape + (paths,)))
+    p = process(t, x=rng().random(t.shape + vshape + (paths,)))
 
     def verify(q, newt, newx):
         assert_(isinstance(q, process))
@@ -321,7 +321,7 @@ def process_t_getitem(t, paths, vshape):
 
 # enumerate test cases and launch tests
 def test_p_getitem():
-    np.random.seed(SEED)
+    legacy_seed(SEED)
 
     # do cases
     t = [np.zeros(1) + 2, np.linspace(1., 4., 12)]
@@ -332,7 +332,7 @@ def test_p_getitem():
 
 # case testing
 def process_p_getitem(t, paths, vshape):
-    p = process(t, x=np.random.random(t.shape + vshape + (paths,)))
+    p = process(t, x=rng().random(t.shape + vshape + (paths,)))
 
     def verify(q, newt, newx):
         assert_(isinstance(q, process))
@@ -368,7 +368,7 @@ def process_p_getitem(t, paths, vshape):
 
 # enumerate test cases and launch tests
 def test_v_getitem():
-    np.random.seed(SEED)
+    legacy_seed(SEED)
 
     # do cases
     t = [np.zeros(1) + 2, np.linspace(1., 4., 11)]
@@ -389,7 +389,7 @@ def process_v_getitem(t, paths):
             verify(p[('v',) + i], p.t, p[(slice(None),) + i + (slice(None),)])
 
     # vshape = ()
-    p = process(t, x=np.random.random(t.shape + () + (paths,)))
+    p = process(t, x=rng().random(t.shape + () + (paths,)))
     q = p['v', ()]
     verify(q, p.t, p)
     iall(p)
@@ -399,7 +399,7 @@ def process_v_getitem(t, paths):
     assert_raises(IndexError, ierr)
 
     # vshape = (5,)
-    p = process(t, x=np.random.random(t.shape + (5,) + (paths,)))
+    p = process(t, x=rng().random(t.shape + (5,) + (paths,)))
     iall(p)
     q = p['v', 0:2]
     verify(q, p.t, p[:, 0:2, :])
@@ -420,7 +420,7 @@ def process_v_getitem(t, paths):
     verify(q, p.t, p[:, i, :])
 
     # vshape = (5, 7)
-    p = process(t, x=np.random.random(t.shape + (5, 7) + (paths,)))
+    p = process(t, x=rng().random(t.shape + (5, 7) + (paths,)))
     iall(p)
     q = p['v', 0:2]
     verify(q, p.t, p[:, 0:2, :])
@@ -463,8 +463,8 @@ def process_v_getitem(t, paths):
 
 # enumerate test cases and launch tests
 def test_properties():
-    np.random.seed(SEED)
-    p = process(t=(1., 2, 4), x=np.random.random((3, 5, 7, 11)))
+    legacy_seed(SEED)
+    p = process(t=(1., 2, 4), x=rng().random((3, 5, 7, 11)))
 
     def sharemem(a, b):
         return a.__array_interface__['data'][0] == \
@@ -498,7 +498,7 @@ def process_properties(t, paths, vshape, dtype):
     if tt.ndim == 0:
         tt = tt.reshape(1)
 
-    p = process(t, x=np.random.random(tt.shape + vshape + (paths,)),
+    p = process(t, x=rng().random(tt.shape + vshape + (paths,)),
                 dtype=dtype)
     assert_(p.shape == p.t.shape + p.vshape + (p.paths,))
     assert_array_equal(p.t, p.tx.flatten())
@@ -517,10 +517,10 @@ def process_properties(t, paths, vshape, dtype):
 # ----------------
 
 def test_shapeas():
-    np.random.seed(SEED)
+    legacy_seed(SEED)
 
     def mkp(vshape):
-        return process(t=(0, 1), x=np.random.random((2,) + vshape + (3,)))
+        return process(t=(0, 1), x=rng().random((2,) + vshape + (3,)))
 
     for vshape in ((), (5,), (5, 7)):
         p = mkp(vshape)
@@ -555,9 +555,9 @@ def test_shapeas():
 # ----------------
 
 def test_copy():
-    np.random.seed(SEED)
+    legacy_seed(SEED)
 
-    p = process(t=(1, 2, 3), x=np.random.random((3, 5, 7, 11)))
+    p = process(t=(1, 2, 3), x=rng().random((3, 5, 7, 11)))
     q = p.pcopy()
     qt = p.tcopy()
     qx = p.xcopy()
@@ -581,9 +581,9 @@ def test_copy():
 # -----------------------
 
 def test_summary():
-    np.random.seed(SEED)
+    legacy_seed(SEED)
 
-    p = process(t=(1, 2, 3), x=1 + np.random.random((3, 5, 7, 11)),
+    p = process(t=(1, 2, 3), x=1 + rng().random((3, 5, 7, 11)),
                 dtype=np.float64)
 
     funcs = ('min', 'max', 'sum', 'mean', 'var', 'std')
@@ -686,11 +686,11 @@ def test_summary():
 # ----------------------------------------
 
 def test_increments():
-    np.random.seed(SEED)
+    legacy_seed(SEED)
 
     t = np.linspace(1, 2, 100)
     t *= t
-    p = process(t, x=1 + np.random.random(t.shape + (2, 3) + (5,)),
+    p = process(t, x=1 + rng().random(t.shape + (2, 3) + (5,)),
                 dtype=np.float64)
 
     dp = p.tdiff()
@@ -727,7 +727,7 @@ def test_increments():
 
 # enumerate test cases and launch tests
 def test_chf_cdf():
-    np.random.seed(SEED)
+    legacy_seed(SEED)
 
     t = [2., (5.,), (0, 1.), np.linspace(0., 4., 17)]
     paths = [1, 19]
@@ -744,7 +744,7 @@ def process_chf_cdf(t, s, u, paths, vshape):
         tt = tt.reshape(1)
     ss, uu = np.asarray(s), np.asarray(u)
 
-    p = process(t, x=np.random.random(tt.shape + vshape + (paths,)))
+    p = process(t, x=rng().random(tt.shape + vshape + (paths,)))
 
     f = p.chf(u)
     assert_(f.shape == tt.shape + uu.shape + vshape)
@@ -775,7 +775,7 @@ def process_chf_cdf(t, s, u, paths, vshape):
 
 # enumerate test cases and launch tests
 def test_piecewise():
-    np.random.seed(SEED)
+    legacy_seed(SEED)
 
     dtype = [np.float64, np.float32, np.float16]
     paths = [None, 5]
@@ -797,11 +797,11 @@ def tst_piecewise(dtype, paths, vshape, mode, shift):
     t = np.array((1, 2, 3), dtype=dtype) + shift
     if paths is None:
         paths = 1
-        v = vv = 1 + np.random.random((3,) + vshape).astype(dtype)
+        v = vv = 1 + rng().random((3,) + vshape).astype(dtype)
         x = v.reshape(v.shape + (1,))
         xx = None
     else:
-        x = xx = 1 + np.random.random((3,) + vshape + (paths,)).astype(dtype)
+        x = xx = 1 + rng().random((3,) + vshape + (paths,)).astype(dtype)
         vv = None
 
     if mode is None:

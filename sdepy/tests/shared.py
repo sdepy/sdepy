@@ -110,7 +110,8 @@ KFUNC = _config.KFUNC
 # (see eps function below)
 EPS_FACTOR = 16
 
-# each testing routine should call np.random.seed(SEED) or legacy_seed(SEED)
+# each testing routine should call legacy_seed(SEED) and
+# access random numbers via rng().random, rng().normal etc.
 SEED = 1234
 
 # DIR is the directory used, in quantitative tests,
@@ -166,6 +167,12 @@ def legacy_seed(seed):
         sdepy.infrastructure.default_rng = np.random.RandomState(seed)
     # uncomment this to test using PCG64:
     # sdepy.infrastructure.default_rng = np.random.default_rng(seed)
+
+
+def rng():
+    """Use `rng()` instead of `np.random` to access the current
+    sdepy default random number generator."""
+    return sdepy.infrastructure.default_rng
 
 
 def do(testing_function, *case_iterators, **args):

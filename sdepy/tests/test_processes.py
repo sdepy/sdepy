@@ -79,13 +79,13 @@ all_shortcuts = (wiener, lognorm,
 # enumerate test cases with constant parameters and launch tests
 # --------------------------------------------------------------
 def test_processes():
-    np.random.seed(SEED)
+    legacy_seed(SEED)
 
     # setup some parameter test values
     # --------------------------------
     CM2 = ((1, .2), (.2, 1))
     CM3 = ((1, .2, -.3), (.2, 1, .1), (-.3, .1, 1))
-    CM6 = np.eye(6) + 0.1*np.random.random((6, 6))
+    CM6 = np.eye(6) + 0.1*rng().random((6, 6))
     CM6 = (CM6 + CM6.T)/2
 
     # processes to act as sources
@@ -98,7 +98,7 @@ def test_processes():
 
     # a 'bare' object with source protocol
     def S2(s, ds):
-        return np.random.normal(size=(2, 11))*sqrt(np.abs(ds))
+        return rng().normal(size=(2, 11))*sqrt(np.abs(ds))
 
     S2.vshape = (2,)
     S2.paths = 11
@@ -287,7 +287,7 @@ def test_processes():
 # enumerate test cases with time-dependent parameters and launch tests
 # --------------------------------------------------------------------
 def test_processes_local():
-    np.random.seed(SEED)
+    legacy_seed(SEED)
 
     # setup some parameter test values
     # --------------------------------
@@ -305,7 +305,7 @@ def test_processes_local():
     def CM2(t): return ((1, .2*t/10), (.2*t/10, 1))
 
     def CM6(t):
-        C = np.eye(6) + t*0.1*np.random.random((6, 6))
+        C = np.eye(6) + t*0.1*rng().random((6, 6))
         return (C + C.T)/2
 
     def R(t): return 0.5 - 0.1*t
@@ -476,7 +476,7 @@ def test_processes_exceptions():
 
 
 def test_jumps():
-    np.random.seed(SEED)
+    legacy_seed(SEED)
 
     # jump diffusion process integrated as is
     # (jumpdiff_process integrates the logarithm)
@@ -550,7 +550,7 @@ def test_processes_misc():
     # test exactness of wiener_process and lognorm_process
     # with constant parameters
 
-    np.random.seed(SEED)
+    legacy_seed(SEED)
     paths = 31
     x0 = 10
     mu, sigma = .2, .7

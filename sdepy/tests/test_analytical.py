@@ -135,7 +135,7 @@ def test_warnings():
 
 
 def test_analytical():
-    np.random.seed(SEED)
+    legacy_seed(SEED)
 
     # all functions excluding hw2f stats
     # ----------------------------------
@@ -217,7 +217,7 @@ def analytical(f, tshape, xushape, params_shape, nvar, hw2f):
 
     # generate variables and parameters values
     def make(shape):
-        return 0.1*np.random.random(shape)
+        return 0.1*rng().random(shape)
     t = 1 + make(tshape)
     xu = 1 + make(xushape)
     if hw2f:

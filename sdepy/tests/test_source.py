@@ -45,7 +45,7 @@ true_wiener_source = sp.true_wiener_source
 
 # main test
 def test_source_general():
-    np.random.seed(SEED)
+    legacy_seed(SEED)
 
     # do cases
     paths = [10]
@@ -201,7 +201,7 @@ def source_general(paths, dtype, source_and_params):
 
 # main test
 def test_source_specific():
-    np.random.seed(SEED)
+    legacy_seed(SEED)
 
     # wiener tests
     src = wiener_source(vshape=3, paths=5)
@@ -316,7 +316,7 @@ def test_source_true_wiener():
     rho2, irho2 = (lambda t: 0.1 + t/6, lambda t, t0: 0.1 + (t + t0)/12)
     rho3, irho3 = (None, lambda t, t0: 0)
 
-    np.random.seed(SEED)
+    legacy_seed(SEED)
     for t0 in (0, 1):
         for rho, irho in ((rho0, irho0), (rho1, irho1),
                           (rho2, irho2), (rho3, irho3)):

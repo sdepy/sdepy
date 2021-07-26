@@ -61,7 +61,7 @@ class generator_cls(paths_generator):
 
 # tests with output timeline == integration timeline
 def test_generator_t():
-    np.random.seed(SEED)
+    legacy_seed(SEED)
 
     integr = generator_cls(paths=1, vshape=(), xw0=1)
     t = np.linspace(0, 10, 11)
@@ -113,7 +113,7 @@ def test_generator_t():
 
 # tests with output timeline != integration timeline
 def test_generator_steps():
-    np.random.seed(SEED)
+    legacy_seed(SEED)
 
     integr = generator_cls(paths=1, vshape=(), xw0=1,
                            info={})
@@ -168,7 +168,7 @@ class deep_cls(paths_generator):
 
 def test_generator_depth():
 
-    np.random.seed(SEED)
+    legacy_seed(SEED)
     integr = deep_cls(dtype=int)
     x = integr((1, 2, 3))
     assert_((x == np.array((10, 20, 30)).reshape(-1, 1)).all())
@@ -183,7 +183,7 @@ def test_generator_depth():
 # ------------------------------
 
 def test_SDE():
-    np.random.seed(SEED)
+    legacy_seed(SEED)
 
     paths = 3
     vshapes = ((), 2, (2, 5))
@@ -370,7 +370,7 @@ def test_SDE():
     # -------------------------------------
     def f(t, x=0, y=0, z=0, w=0):
         return ({'dw': x}, {'dw': y}, {'dw': z}, {'dw': w})
-    rm4 = np.random.random((4, 4))
+    rm4 = rng().random((4, 4))
     corr4 = np.eye(4) + 0.1 * (rm4 + rm4.T)
     xs = integrate(f)(x0=(1,)*4, corr=corr4, paths=11, steps=30)(t)
     for u in xs:

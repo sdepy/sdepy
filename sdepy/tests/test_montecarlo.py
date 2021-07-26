@@ -33,7 +33,7 @@ test_aaa_config.config = True
 
 # main test
 def test_montecarlo_workflow():
-    np.random.seed(SEED)
+    legacy_seed(SEED)
 
     # do cases
     shape = [(), (2,), (3, 2)]
@@ -54,7 +54,7 @@ def montecarlo_workflow(shape, paths, dtype):
     a = montecarlo(bins='auto')
     assert_raises(ValueError, a.histogram)
     for i in range(10):
-        sample = (100*np.random.normal(size=shape + (PATHS,))).astype(dtype)
+        sample = (100*rng().normal(size=shape + (PATHS,))).astype(dtype)
         sample *= (1 + np.arange(size)).reshape(shape + (1,))
         a.update(sample)
     assert_(a.paths == PATHS*10)
@@ -115,7 +115,7 @@ def montecarlo_workflow(shape, paths, dtype):
     # use paths along different axes
     e = None
     for k in range(len(shape)):
-        axis_sample = np.random.normal(
+        axis_sample = rng().normal(
             size=shape[:k] + (PATHS,) + shape[k:]).astype(dtype)
         # first run
         e = montecarlo(axis_sample, axis=k, bins=20, range=(-3, 3))
@@ -133,7 +133,7 @@ def montecarlo_workflow(shape, paths, dtype):
                     rtol=eps(f.mean().dtype))
 
     # antithetic sampling
-    sample = np.random.normal(size=(2*PATHS,) + shape)
+    sample = rng().normal(size=(2*PATHS,) + shape)
     even = montecarlo(sample, axis=0, use='even')
     odd = montecarlo(sample, axis=0, use='odd')
     for a in (even, odd):
@@ -141,7 +141,7 @@ def montecarlo_workflow(shape, paths, dtype):
         assert_(a.paths == PATHS)
     assert_allclose(even.mean(), montecarlo(sample, 0).mean())
     assert_allclose(odd.mean(), (sample[:PATHS]-sample[PATHS:]).mean(axis=0)/2)
-    sample2 = np.random.normal(size=(4*PATHS,) + shape)
+    sample2 = rng().normal(size=(4*PATHS,) + shape)
     even.update(sample2, axis=0)
     odd.update(sample2, axis=0)
     for a in (even, odd):
@@ -168,7 +168,7 @@ def montecarlo_workflow(shape, paths, dtype):
 
 # main test
 def test_montecarlo_cumulate():
-    np.random.seed(SEED)
+    legacy_seed(SEED)
 
     shape = [(), (2,), (3, 2)]
     paths = [1, 10]
@@ -180,7 +180,7 @@ def test_montecarlo_cumulate():
 # cases
 def montecarlo_cumulate(shape, paths, dtype):
     PATHS = paths
-    sample = np.random.normal(size=shape + (4*PATHS,)).astype(dtype)
+    sample = rng().normal(size=shape + (4*PATHS,)).astype(dtype)
 
     # full sample as first run
     a = montecarlo(sample)
@@ -220,7 +220,7 @@ def montecarlo_cumulate(shape, paths, dtype):
 @slow
 @quant
 def test_montecarlo_histogram():
-    np.random.seed(SEED)
+    legacy_seed(SEED)
 
     context = 'histogram'
     err_expected = load_errors(context)
@@ -277,7 +277,7 @@ def montecarlo_histogram(context, test_id, err_expected, err_realized,
     dist, support, bins, _ = dist_info[test_id]
     test_key = context + '_' + test_id
 
-    sample = dist.rvs(size=shape + (paths,))
+    sample = dist.rvs(size=shape + (paths,), random_state=rng())
     sample_bins = np.empty(shape + bins.shape)
     for i in np.ndindex(shape):
         sample_bins[i] = bins
@@ -335,7 +335,7 @@ def montecarlo_histogram(context, test_id, err_expected, err_realized,
 @slow
 @quant
 def test_montecarlo_dist():
-    np.random.seed(SEED)
+    legacy_seed(SEED)
 
     context = 'distr'
     err_expected = load_errors(context)
@@ -394,7 +394,7 @@ def montecarlo_dist(context, test_id, err_expected, err_realized,
     test_key = context + '_' + test_id
 
     # prepare sample
-    sample = dist.rvs(size=shape + (paths,))
+    sample = dist.rvs(size=shape + (paths,), random_state=rng())
     sample_bins = np.empty(shape + bins.shape)
     for i in np.ndindex(shape):
         sample_bins[i] = bins
