@@ -45,7 +45,7 @@ true_wiener_source = sp.true_wiener_source
 
 # main test
 def test_source_general():
-    np.random.seed(SEED)
+    legacy_seed(SEED)
 
     # do cases
     paths = [10]
@@ -194,6 +194,36 @@ def source_general(paths, dtype, source_and_params):
     else:
         assert_(False)
 
+    # test rng parameter
+    try:
+        make_rngs = (
+            np.random.default_rng,
+            np.random.RandomState,
+            lambda z: np.random.Generator(np.random.PCG64(z)),
+        )
+    except AttributeError:
+        return
+    for make_rng in make_rngs:
+        rng1 = make_rng(SEED)
+        rng2 = make_rng(SEED)
+        assert rng1 is not rng2
+        src1 = cls(paths=paths, dtype=dtype, rng=rng1, **params)
+        src2 = cls(paths=paths, dtype=dtype, rng=rng2, **params)
+        assert src1.rng is rng1
+        assert src2.rng is rng2
+        s1, s2 = src1(0., 1.), src2(0., 1.)
+        assert_allclose(s1, s2)
+
+        # test that global sdepy.infrastructure.default_rng
+        # propagates correctly as a default
+        tmp = sdepy.infrastructure.default_rng
+        sdepy.infrastructure.default_rng = make_rng(SEED)
+        src3 = cls(paths=paths, dtype=dtype, rng=None, **params)
+        assert src3.rng is sdepy.infrastructure.default_rng
+        s3 = src3(0., 1.)
+        assert_allclose(s1, s3)
+        sdepy.infrastructure.default_rng = tmp
+
 
 # ---------------------
 # source specific tests
@@ -201,7 +231,7 @@ def source_general(paths, dtype, source_and_params):
 
 # main test
 def test_source_specific():
-    np.random.seed(SEED)
+    legacy_seed(SEED)
 
     # wiener tests
     src = wiener_source(vshape=3, paths=5)
@@ -226,7 +256,7 @@ def test_source_specific():
     val = 2.
 
     class const_rv:
-        def rvs(self, size):
+        def rvs(self, size, random_state):
             return np.full(size, fill_value=val)
 
     src = cpoisson_source(lam=1., paths=100, ptype=np.int16,
@@ -235,6 +265,21 @@ def test_source_specific():
     assert_allclose(n*val, s, rtol=eps(s.dtype))
     s, n = src(0, 100), src.dn_value
     assert_allclose(n*val, s, rtol=eps(s.dtype))
+
+    # compound poisson tests with legacy rv signature
+    val = 2.
+
+    class const_rv_legacy:
+        def rvs(self, size):
+            return np.full(size, fill_value=val)
+
+    src = cpoisson_source(lam=1., paths=100, ptype=np.int16,
+                              y=const_rv_legacy())
+    with assert_warns(DeprecationWarning):
+        s, n = src(0, 1), src.dn_value
+        assert_allclose(n*val, s, rtol=eps(s.dtype))
+        s, n = src(0, 100), src.dn_value
+        assert_allclose(n*val, s, rtol=eps(s.dtype))
 
     # true sources tests
     for cls in (true_wiener_source, true_poisson_source, true_cpoisson_source,
@@ -301,7 +346,7 @@ def test_source_true_wiener():
     rho2, irho2 = (lambda t: 0.1 + t/6, lambda t, t0: 0.1 + (t + t0)/12)
     rho3, irho3 = (None, lambda t, t0: 0)
 
-    np.random.seed(SEED)
+    legacy_seed(SEED)
     for t0 in (0, 1):
         for rho, irho in ((rho0, irho0), (rho1, irho1),
                           (rho2, irho2), (rho3, irho3)):

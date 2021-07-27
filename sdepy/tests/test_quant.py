@@ -296,7 +296,7 @@ def quant_case(case, context, err_expected, err_realized, PATHS):
     # plot paths for visual inspection (no testing)
     if PLOT:
         print('plotting...')
-        np.random.seed(SEED)
+        legacy_seed(SEED)
         fig = bfig()
         plt.title('{}: 30 sample paths'.format(Xid))
         plt.xlabel('t')
@@ -306,7 +306,7 @@ def quant_case(case, context, err_expected, err_realized, PATHS):
 
     # check mean, std and variance
     if Xmean is not None:
-        np.random.seed(SEED)
+        legacy_seed(SEED)
         x = X(t, paths=PATHS)
         if 'heston' in Xid:
             log(x, out=x)
@@ -323,7 +323,7 @@ def quant_case(case, context, err_expected, err_realized, PATHS):
         del x
 
     # check pdf and cdf
-    np.random.seed(SEED)
+    legacy_seed(SEED)
     a = sp.montecarlo(bins=200)
     for i in range(10):
         x = X(s, paths=PATHS)
@@ -533,7 +533,7 @@ def params_case(case, context, err_expected, err_realized, PATHS):
         pvalues = args[param]
 
     # process to be tested
-    np.random.seed(SEED)
+    legacy_seed(SEED)
     if iskfunc(Xclass):
         # test kfunc call with parameters
         x = Xclass(**args)(s, paths=PATHS)
@@ -587,7 +587,7 @@ def params_case(case, context, err_expected, err_realized, PATHS):
 
 def test_bs():
     """a bare-bone test on Black-Scholes call and put valuation"""
-    np.random.seed(SEED)
+    legacy_seed(SEED)
 
     Kc, Kp = 1.2, 0.6
     T = 2.

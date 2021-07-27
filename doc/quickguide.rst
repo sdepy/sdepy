@@ -65,7 +65,6 @@ It is best explained by examples, involving ``my_process``, ``myp`` and
 1. **Scalar process** in 100000 paths, with default parameters, computed
    at 5 time points (``coarse_timeline``), using 100 steps in between::
 
-    >>> np.random.seed(1)  # make doctests predictable
     >>> x = my_process(x0=1, paths=100*1000,
     ...                steps=100)(coarse_timeline)
     >>> x.shape
@@ -168,7 +167,7 @@ It is best explained by examples, involving ``my_process``, ``myp`` and
     >>> for i in range(10):
     ...     gr = plt.plot(k[0, :, 0], x[-1, i, :, :].mean(axis=-1))
     >>> lb = plt.xlabel('k'), plt.ylabel('x(t=2).mean()')
-    >>> plt.show() # doctest: +SKIP
+    >>> plt.show()  # doctest: +SKIP
 
    In the example above, set ``steps>=100`` to go from inaccurate and fast,
    to meaningful and slow.
@@ -292,7 +291,7 @@ It is best explained by examples, involving ``my_process``, ``myp`` and
     >>> gr = plt.plot(t, x1(t)[:, i], t, x2(t)[:, i], t, x3(t)[:, i])
     >>> plt.show() # doctest: +SKIP
     >>> gr = plt.plot(t, y1[:, i], t, y2[:, i], t, y3[:, i])
-    >>> plt.show() # doctest: +SKIP
+    >>> plt.show()  # doctest: +SKIP
 
 
 ------------------------------------
@@ -504,7 +503,6 @@ an exact result irrespective of the number and size
 of the integration steps (this happens since, by implementation,
 it integrates the linear SDE for ``log(x)``)::
 
-    >>> np.random.seed(1)
     >>> args = dict(dw=sdepy.true_wiener_source(paths=100),
     ...             paths=100, x0=10)
     >>> timeline = (0, 1)
@@ -524,7 +522,8 @@ it integrates the linear SDE for ``log(x)``)::
     >>> ax = plt.axes(label=0); ax.set_xscale('log'); ax.set_yscale('log')
     >>> gr = ax.plot(steps, errors)
     >>> plt.show()  # doctest: +SKIP
-    >>> print('euler error: {:.2e}\n   rk error: {:.2e}'.format(errors[-1,0], errors[-1,1]))
+    >>> print(f'euler error: {errors[-1,0]:.2e}\n'
+    ...       f'   rk error: {errors[-1,1]:.2e}')  # doctest: +SKIP
     euler error: 1.70e-03
        rk error: 8.80e-06
 
@@ -547,7 +546,6 @@ Setup::
     >>> from scipy.special import erf
     >>> from scipy.integrate import quad
 
-    >>> np.random.seed(1)
     >>> k = .5
     >>> x0, x1 = 0, 10;
     >>> t0, t1 = 0, 1
@@ -608,9 +606,9 @@ Comparison against exact values::
     >>> gr = plt.plot(xgrid, u2, y, u2_exact(y, t1), ':')
     >>> plt.show()  # doctest: +SKIP
 
-    >>> print('u1 error: {:.2e}\nu2 error: {:.2e}'.format(
-    ...     np.abs(u1 - u1_exact(xgrid, t1)).mean(),
-    ...     np.abs(u2 - u2_exact(xgrid, t1)).mean()))
+    >>> print(f'u1 error: {np.abs(u1 - u1_exact(xgrid, t1)).mean():.2e}\n'
+    ...       f'u2 error: {np.abs(u2 - u2_exact(xgrid, t1)).mean():.2e}'
+    ... )  # doctest: +SKIP
     u1 error: 2.49e-03
     u2 error: 5.51e-03
 
@@ -653,7 +651,6 @@ simulated across 50000 independent paths and their antithetics
     ...     mu=(riskfree - dividend_yield),
     ...     sigma=sigma,
     ...     vshape=4, paths=100*1000, steps=maturity*250)
-    >>> np.random.seed(1)
     >>> x = p(timeline)
     >>> x.shape
     (9, 4, 100000)

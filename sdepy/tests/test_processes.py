@@ -79,13 +79,13 @@ all_shortcuts = (wiener, lognorm,
 # enumerate test cases with constant parameters and launch tests
 # --------------------------------------------------------------
 def test_processes():
-    np.random.seed(SEED)
+    legacy_seed(SEED)
 
     # setup some parameter test values
     # --------------------------------
     CM2 = ((1, .2), (.2, 1))
     CM3 = ((1, .2, -.3), (.2, 1, .1), (-.3, .1, 1))
-    CM6 = np.eye(6) + 0.1*np.random.random((6, 6))
+    CM6 = np.eye(6) + 0.1*rng().random((6, 6))
     CM6 = (CM6 + CM6.T)/2
 
     # processes to act as sources
@@ -97,11 +97,14 @@ def test_processes():
                          )(np.linspace(0, 1, 100))
 
     # a 'bare' object with source protocol
-    def S2(s, ds):
-        return np.random.normal(size=(2, 11))*sqrt(np.abs(ds))
-
-    S2.vshape = (2,)
-    S2.paths = 11
+    def make_S2(rng_):
+        if rng_ is None:
+            rng_ = rng()
+        def S2(s, ds):
+            return rng_.normal(size=(2, 11))*sqrt(np.abs(ds))
+        S2.vshape = (2,)
+        S2.paths = 11
+        return S2
 
     # a generic scipy random variable
     rv = scipy.stats.trapz(c=.1, d=.2)
@@ -119,9 +122,10 @@ def test_processes():
     do(processes, cls, params, paths, dtype)
 
     paths, dtype = [11], [None]
-    params = (dict(vshape=2, dw=Z2),
-              dict(vshape=2, dw=S2),
-              )
+    params = (
+        dict(vshape=2, dw=Z2),
+        lambda rng=None: dict(vshape=2, dw=make_S2(rng)),
+    )
     cls = list(cls)
     for p in (heston_process, heston,
               full_heston_process, heston_xy,
@@ -142,8 +146,10 @@ def test_processes():
         dict(vshape=(2,), corr=CM2),
         dict(vshape=(2, 3)),
         dict(vshape=(2, 3), corr=CM3),
-        dict(vshape=(2, 3), dw=wiener_source(paths=11, vshape=(2, 3))),
-        dict(vshape=(), dw=true_wiener_source(paths=11, vshape=())),
+        lambda rng=None: dict(
+            vshape=(2, 3), dw=wiener_source(paths=11, vshape=(2, 3), rng=rng)),
+        lambda rng=None: dict(
+            vshape=(), dw=true_wiener_source(paths=11, vshape=(), rng=rng)),
         dict(vshape=(2, 3), dw=Z23),
         )
     do(processes, cls, params, paths, dtype)
@@ -153,9 +159,11 @@ def test_processes():
         dict(vshape=2, x0=.1, theta=.2, k=.4, sigma=.5),
         dict(vshape=(2,), corr=CM2),
         dict(vshape=(2,), dw=Z2),
-        dict(vshape=(2, 3), dw=wiener_source(paths=11, vshape=(2, 3))),
+        lambda rng=None: dict(
+            vshape=(2, 3), dw=wiener_source(paths=11, vshape=(2, 3), rng=rng)),
         dict(vshape=(2, 3), dw=Z23),
-        dict(vshape=(), dw=true_wiener_source(paths=11, vshape=()))
+        lambda rng=None: dict(
+            vshape=(), dw=true_wiener_source(paths=11, vshape=(), rng=rng))
     )
     do(processes, cls, params, paths, dtype)
 
@@ -166,25 +174,28 @@ def test_processes():
         dict(vshape=(), factors=2,
              x0=((.1,), (.2,)), theta=((.4,), (.5,)), k=((.6,), (.7,)),
              sigma=((.8,), (.9,)), rho=0.25),
-        dict(vshape=(), factors=2,
-             dw=wiener_source(paths=11, vshape=(2,),
-                              corr=((1, .25,), (.25, 1)))),
+        lambda rng=None: dict(
+            vshape=(), factors=2,
+            dw=wiener_source(paths=11, vshape=(2,), rng=rng,
+                             corr=((1, .25,), (.25, 1)))),
         dict(vshape=(3,), factors=2, dw=Z32),
-        dict(vshape=(), factors=3,
-             dw=wiener_source(paths=11, vshape=(3,), corr=CM3)),
+        lambda rng=None: dict(vshape=(), factors=3,
+             dw=wiener_source(paths=11, vshape=(3,), corr=CM3, rng=rng)),
         dict(vshape=(2, 3), factors=5,
              sigma=np.arange(2*3*5).reshape(2, 3, 5, 1)/(300)),
         dict(vshape=2, factors=3, dw=Z23),
         dict(vshape=(), factors=2, dw=Z2),
-        dict(vshape=(), factors=2, dw=S2),
+        lambda rng=None: dict(vshape=(), factors=2, dw=make_S2(rng)),
     )
     do(processes, cls, params, paths, dtype)
 
     cls = (hull_white_1factor_process, hw1f)
     params = (
         dict(vshape=2, x0=.1, theta=.2, k=.4, sigma=.5),
-        dict(vshape=(2, 3), dw=wiener_source(paths=11, vshape=(2, 3))),
-        dict(vshape=(), dw=true_wiener_source(paths=11, vshape=())),
+        lambda rng=None: dict(
+            vshape=(2, 3), dw=wiener_source(paths=11, vshape=(2, 3), rng=rng)),
+        lambda rng=None: dict(
+            vshape=(), dw=true_wiener_source(paths=11, vshape=(), rng=rng)),
     )
     do(processes, cls, params, paths, dtype)
 
@@ -193,8 +204,10 @@ def test_processes():
         dict(vshape=2, x0=.1, theta=.2, k=.3, xi=.4),
         dict(vshape=(2,), corr=CM2),
         dict(vshape=(2,), rho=-.1),
-        dict(vshape=(2, 3), dw=wiener_source(paths=11, vshape=(2, 3))),
-        dict(vshape=(), dw=true_wiener_source(paths=11, vshape=())),
+        lambda rng=None: dict(
+            vshape=(2, 3), dw=wiener_source(paths=11, vshape=(2, 3), rng=rng)),
+        lambda rng=None: dict(
+            vshape=(), dw=true_wiener_source(paths=11, vshape=(), rng=rng)),
         dict(vshape=(2, 3), dw=Z23)
     )
     do(processes, cls, params, paths, dtype)
@@ -208,10 +221,12 @@ def test_processes():
              y0=.4, theta=.5, k=.6, xi=.7),
         dict(vshape=(3,), corr=CM6),
         dict(vshape=(3,), rho=(.1, .2, .3)),
-        dict(vshape=(5,), dw=wiener_source(paths=11, vshape=(10,))),
-        dict(vshape=10, dw=true_wiener_source(paths=11, vshape=(20,))),
+        lambda rng=None: dict(
+            vshape=(5,), dw=wiener_source(paths=11, vshape=(10,), rng=rng)),
+        lambda rng=None: dict(
+            vshape=10, dw=true_wiener_source(paths=11, vshape=(20,), rng=rng)),
         dict(vshape=(), dw=Z2),
-        dict(vshape=(), dw=S2),
+        lambda rng=None: dict(vshape=(), dw=make_S2(rng)),
     )
     do(processes, cls, params, paths, dtype)
 
@@ -229,11 +244,12 @@ def test_processes():
         dict(vshape=(), corr=CM2),
         dict(vshape=(1,), corr=CM2),
         dict(vshape=(2, 3, 1), rho=.25),
-        dict(vshape=(3), dw=wiener_source(paths=11, vshape=(6,))),
-        dict(vshape=(2, 3, 1),
-             dw=true_wiener_source(paths=11, vshape=(2, 3, 2))),
+        lambda rng=None: dict(
+            vshape=(3), dw=wiener_source(paths=11, vshape=(6,), rng=rng)),
+        lambda rng=None: dict(vshape=(2, 3, 1),
+            dw=true_wiener_source(paths=11, vshape=(2, 3, 2), rng=rng)),
         dict(vshape=(), dw=Z2),
-        dict(vshape=(), dw=S2),
+        lambda rng=None: dict(vshape=(), dw=make_S2(rng)),
     )
     do(processes, cls, params, paths, dtype)
 
@@ -245,17 +261,24 @@ def test_processes():
         dict(vshape=2, x0=.1, mu=.2, sigma=.3,
              lam=.4),
         dict(vshape=(2,), corr=CM2),
-        dict(vshape=(2, 3), dw=wiener_source(paths=11, vshape=(2, 3))),
-        dict(vshape=(3,), dw=true_wiener_source(paths=11, vshape=(3,)),
-             dj=cpoisson_source(paths=11, vshape=(3,))),
-        dict(vshape=(3,), dw=true_wiener_source(paths=11, vshape=(3,)),
-             dj=true_cpoisson_source(paths=11, vshape=(3,))),
-        dict(vshape=2, dj=poisson_source(paths=11, vshape=2)),
-        dict(vshape=2, dj=true_poisson_source(paths=11, vshape=2)),
-        dict(vshape=2, dj=cpoisson_source(paths=11, vshape=2, y=rv)),
-        dict(vshape=2, dj=true_cpoisson_source(paths=11, vshape=2, y=rv)),
+        lambda rng=None: dict(
+            vshape=(2, 3), dw=wiener_source(paths=11, vshape=(2, 3), rng=rng)),
+        lambda rng=None: dict(
+            vshape=(3,), dw=true_wiener_source(paths=11, vshape=(3,), rng=rng),
+            dj=cpoisson_source(paths=11, vshape=(3,), rng=rng)),
+        lambda rng=None: dict(
+            vshape=(3,), dw=true_wiener_source(paths=11, vshape=(3,), rng=rng),
+            dj=true_cpoisson_source(paths=11, vshape=(3,), rng=rng)),
+        lambda rng=None: dict(
+            vshape=2, dj=poisson_source(paths=11, vshape=2, rng=rng)),
+        lambda rng=None: dict(
+            vshape=2, dj=true_poisson_source(paths=11, vshape=2, rng=rng)),
+        lambda rng=None: dict(
+            vshape=2, dj=cpoisson_source(paths=11, vshape=2, y=rv, rng=rng)),
+        lambda rng=None: dict(
+            vshape=2, dj=true_cpoisson_source(paths=11, vshape=2, y=rv, rng=rng)),
         dict(vshape=2, dw=Z2, dj=Z2),
-        dict(vshape=2, dw=S2, dj=S2),
+        lambda rng=None: dict(vshape=2, dw=make_S2(rng), dj=make_S2(rng)),
     )
     do(processes, cls, params, paths, dtype)
 
@@ -287,7 +310,7 @@ def test_processes():
 # enumerate test cases with time-dependent parameters and launch tests
 # --------------------------------------------------------------------
 def test_processes_local():
-    np.random.seed(SEED)
+    legacy_seed(SEED)
 
     # setup some parameter test values
     # --------------------------------
@@ -304,9 +327,14 @@ def test_processes_local():
 
     def CM2(t): return ((1, .2*t/10), (.2*t/10, 1))
 
-    def CM6(t):
-        C = np.eye(6) + t*0.1*np.random.random((6, 6))
-        return (C + C.T)/2
+    rng_ = rng()
+    def make_CM6(rng_):
+        if rng_ is None:
+            rng_ = rng()
+        def CM6(t):
+            C = np.eye(6) + t*0.1*rng_.random((6, 6))
+            return (C + C.T)/2
+        return CM6
 
     def R(t): return 0.5 - 0.1*t
 
@@ -325,19 +353,21 @@ def test_processes_local():
         dict(vshape=(2,), mu=A, sigma=C, corr=CM2P),
         dict(vshape=(2,), mu=A, sigma=C, rho=R),
         dict(vshape=(2,), mu=A, sigma=C, rho=RP),
-        dict(vshape=(6,), mu=A, sigma=C, corr=CM6),
+        lambda rng=None: dict(vshape=(6,), mu=A, sigma=C, corr=make_CM6(rng)),
         dict(vshape=(6,), mu=A, sigma=C, rho=R3P),
-        dict(vshape=(6,), mu=A, sigma=C,
-             dw=true_wiener_source(paths=11, vshape=6, rho=R3P)),
-        )
+        lambda rng=None: dict(
+            vshape=(6,), mu=A, sigma=C,
+            dw=true_wiener_source(paths=11, vshape=6, rho=R3P, rng=rng)),
+    )
     do(processes, cls, params, paths, dtype)
 
     cls = (ornstein_uhlenbeck_process, )
     params = (
         dict(vshape=(), x0=.1, theta=A, k=B, sigma=C),
         dict(vshape=(2,), theta=A, k=B, sigma=C, corr=CM2),
-        dict(vshape=(2,), theta=A, k=B, sigma=C,
-             dw=true_wiener_source(paths=11, vshape=2, corr=CM2)),
+        lambda rng=None: dict(
+            vshape=(2,), theta=A, k=B, sigma=C,
+            dw=true_wiener_source(paths=11, vshape=2, corr=CM2, rng=rng)),
     )
     do(processes, cls, params, paths, dtype)
 
@@ -360,7 +390,8 @@ def test_processes_local():
     params = (
         dict(vshape=(), x0=.1, mu=A, sigma=B,
              y0=.2, theta=C, k=B, xi=A, rho=B),
-        dict(vshape=(3,), theta=A, k=B, xi=C, corr=CM6),
+        lambda rng=None: dict(
+            vshape=(3,), theta=A, k=B, xi=C, corr=make_CM6(rng)),
         dict(vshape=(3,), theta=A, k=B, xi=C, rho=R3P)
     )
     do(processes, cls, params, paths, dtype)
@@ -369,7 +400,8 @@ def test_processes_local():
     params = (
         dict(vshape=(), x0=.1, mu=A, sigma=B,
              y0=.2, theta=A, k=B, xi=C, rho=B),
-        dict(vshape=(3,), theta=A, k=B, xi=C, corr=CM6)
+        lambda rng=None: dict(
+            vshape=(3,), theta=A, k=B, xi=C, corr=make_CM6(rng))
     )
     do(processes, cls, params, paths, dtype)
 
@@ -401,6 +433,12 @@ def test_processes_local():
 
 # case testing
 def processes(cls, params, paths, dtype):
+
+    # store params maker to be used for rng tests
+    make_params = params
+    if callable(make_params):
+        # recover params with default rng for other tests
+        params = make_params()
 
     # print(cls.__name__, sep='', end='')
     P = cls(**params, paths=paths, dtype=dtype)
@@ -437,6 +475,43 @@ def processes(cls, params, paths, dtype):
                     # initial values are the same for all paths
                     assert_((p[i0] == p[i0, ..., 0][..., np.newaxis]).all())
 
+                # extensive test of rng parameter (too slow to be included
+                # in the test suite)
+                if False:
+                    try:
+                        make_rngs = (
+                            np.random.default_rng,
+                            np.random.RandomState,
+                            lambda z: np.random.Generator(
+                                np.random.PCG64(z)),
+                        )
+                    except AttributeError:
+                        continue
+                    for make_rng in make_rngs:
+                        rng1 = make_rng(SEED)
+                        rng2 = make_rng(SEED)
+                        assert rng1 is not rng2
+                        if callable(make_params):
+                            params1 = make_params(rng1)
+                            params2 = make_params(rng2)
+                        else:
+                            params1 = params2 = params
+                        P1 = cls(**params1, paths=paths,
+                                 dtype=dtype, rng=rng1,
+                                 steps=steps, i0=i0)
+                        P2 = cls(**params2, paths=paths,
+                                 dtype=dtype, rng=rng2,
+                                 steps=steps, i0=i0)
+                        assert P1.rng is rng1
+                        assert P2.rng is rng2
+                        ps1, ps2 = P1(t), P2(t)
+                        ps1, ps2 = [
+                            ps if isinstance(ps, (tuple, list)) else (ps,)
+                            for ps in (ps1, ps2)]
+                        assert len(ps1) == len(ps2)
+                        for z, w in zip(ps1, ps2):
+                            assert_allclose(z, w)
+
     # check initial conditions on the last computed p
     if cls in {wiener_process, lognorm_process,
                ornstein_uhlenbeck_process,
@@ -465,6 +540,51 @@ def processes(cls, params, paths, dtype):
         assert_allclose(p0, x0, rtol=eps(p.dtype))
         assert_allclose(q0, y0, rtol=eps(p.dtype))
 
+    # test rng parameter
+    try:
+        make_rngs = (
+            np.random.default_rng,
+            np.random.RandomState,
+            lambda z: np.random.Generator(np.random.PCG64(z)),
+        )
+    except AttributeError:
+        return
+    for make_rng in make_rngs:
+        rng1 = make_rng(SEED)
+        rng2 = make_rng(SEED)
+        assert rng1 is not rng2
+        if callable(make_params):
+            params1 = make_params(rng1)
+            params2 = make_params(rng2)
+        else:
+            params1 = params2 = params
+        t = tlist[-1]
+        P1 = cls(**params1, paths=paths, dtype=dtype, rng=rng1)
+        P2 = cls(**params2, paths=paths, dtype=dtype, rng=rng2)
+        assert P1.rng is rng1
+        assert P2.rng is rng2
+        ps1, ps2 = P1(t), P2(t)
+        ps1, ps2 = [ps if isinstance(ps, (tuple, list)) else (ps,)
+                    for ps in (ps1, ps2)]
+        assert len(ps1) == len(ps2)
+        for z, w in zip(ps1, ps2):
+            assert_allclose(z, w)
+        # test that global sdepy.infrastructure.default_rng
+        # propagates correctly as a default
+        tmp = sdepy.infrastructure.default_rng
+        sdepy.infrastructure.default_rng = make_rng(SEED)
+        if callable(make_params):
+            params3 = make_params()
+        else:
+            params3 = params
+        P3 = cls(**params3, paths=paths, dtype=dtype, rng=None)
+        assert P3.rng is sdepy.infrastructure.default_rng
+        ps3 = P3(t)
+        ps3 = ps3 if isinstance(ps3, (tuple, list)) else (ps3,)
+        assert len(ps1) == len(ps3)
+        assert_allclose(ps1, ps3)
+        sdepy.infrastructure.default_rng = tmp
+
 
 # stand alone test
 def test_processes_exceptions():
@@ -476,7 +596,7 @@ def test_processes_exceptions():
 
 
 def test_jumps():
-    np.random.seed(SEED)
+    legacy_seed(SEED)
 
     # jump diffusion process integrated as is
     # (jumpdiff_process integrates the logarithm)
@@ -550,7 +670,7 @@ def test_processes_misc():
     # test exactness of wiener_process and lognorm_process
     # with constant parameters
 
-    np.random.seed(SEED)
+    legacy_seed(SEED)
     paths = 31
     x0 = 10
     mu, sigma = .2, .7

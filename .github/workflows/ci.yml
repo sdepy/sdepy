@@ -43,8 +43,8 @@ jobs:
       fail-fast: true
       matrix:
         include:
-          - name: Fast python 3.5 tests with minimal requirements
-            py: 3.5
+          - name: Fast python 3.6 tests with minimal requirements
+            py: 3.6
             dependencies: numpy==1.15.2 scipy==0.19.1 pytest==3.8.1
             fast: true
             full: false

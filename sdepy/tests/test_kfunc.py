@@ -273,32 +273,32 @@ def test_kfunc_params():
 
     for X in (sp.wiener_source, sp.dw):
         assert_(kf(X)(paths=2).params ==
-                {'paths': 2, 'vshape': (), 'dtype': None,
+                {'paths': 2, 'vshape': (), 'dtype': None, 'rng': None,
                  'corr': None, 'rho': None})
 
     for X in (sp.odd_wiener_source, sp.odd_dw):
-        # defaults beyond paths and vshape are missed
+        # defaults beyond paths, vshape, dtype, rng are missed
         # due to _antithetics wrapping
         assert_(kf(X)(paths=2).params ==
-                {'paths': 2, 'vshape': ()})
+                {'paths': 2, 'vshape': (), 'dtype': None, 'rng': None})
 
     for X in (sp.true_wiener_source, sp.true_dw):
         assert_(kf(X)(paths=2).params ==
-                {'paths': 2, 'vshape': (), 'dtype': None,
+                {'paths': 2, 'vshape': (), 'dtype': None, 'rng': None,
                  'rtol': 'max', 't0': 0., 'z0': 0.,
                 'corr': None, 'rho': None})
 
     for X in (sp.poisson_source, sp.dn):
         assert_(kf(X)(lam=2, dtype=np.float32).params ==
                 {'paths': 1, 'vshape': (),
-                 'dtype': np.float32, 'lam': 2})
+                 'dtype': np.float32, 'rng': None, 'lam': 2})
 
     # processes
     # ---------
 
     for X in (sp.wiener_process, sp.wiener):
         assert_(kf(X)(x0=2).params ==
-                {'paths': 1, 'vshape': (), 'dtype': None,
+                {'paths': 1, 'vshape': (), 'dtype': None, 'rng': None,
                  'steps': None, 'i0': 0, 'info': None,
                  'getinfo': True, 'method': 'euler',
                  'dw': None, 'corr': None, 'rho': None,
@@ -306,7 +306,7 @@ def test_kfunc_params():
 
     for X in (sp.lognorm_process, sp.lognorm):
         assert_(kf(X)(x0=2).params ==
-                {'paths': 1, 'vshape': (), 'dtype': None,
+                {'paths': 1, 'vshape': (), 'dtype': None, 'rng': None,
                  'steps': None, 'i0': 0, 'info': None,
                  'getinfo': True, 'method': 'euler',
                  'dw': None, 'corr': None, 'rho': None,
@@ -314,7 +314,7 @@ def test_kfunc_params():
 
     for X in (sp.ornstein_uhlenbeck_process, sp.oruh):
         assert_(kf(X)(theta=2, steps=20).params ==
-                {'paths': 1, 'vshape': (), 'dtype': None,
+                {'paths': 1, 'vshape': (), 'dtype': None, 'rng': None,
                  'steps': 20, 'i0': 0, 'info': None,
                  'getinfo': True, 'method': 'euler', 'theta': 2,
                  'dw': None, 'corr': None, 'rho': None,
@@ -322,7 +322,7 @@ def test_kfunc_params():
 
     for X in (sp.hull_white_process, sp.hwff):
         assert_(kf(X)(vshape=3, factors=2).params ==
-                {'paths': 1, 'vshape': 3, 'dtype': None,
+                {'paths': 1, 'vshape': 3, 'dtype': None, 'rng': None,
                  'steps': None, 'i0': 0, 'info': None,
                  'getinfo': True, 'method': 'euler', 'theta': 0,
                  'dw': None, 'corr': None, 'rho': None,
@@ -331,7 +331,7 @@ def test_kfunc_params():
 
     for X in (sp.hull_white_1factor_process, sp.hw1f):
         assert_(kf(X)(vshape=3).params ==
-                {'paths': 1, 'vshape': 3, 'dtype': None,
+                {'paths': 1, 'vshape': 3, 'dtype': None, 'rng': None,
                  'steps': None, 'i0': 0, 'info': None,
                  'getinfo': True, 'method': 'euler', 'theta': 0.,
                  'dw': None, 'corr': None, 'rho': None,
@@ -339,7 +339,7 @@ def test_kfunc_params():
 
     for X in (sp.cox_ingersoll_ross_process, sp.cir):
         assert_(kf(X)(vshape=3).params ==
-                {'paths': 1, 'vshape': 3, 'dtype': None,
+                {'paths': 1, 'vshape': 3, 'dtype': None, 'rng': None,
                  'steps': None, 'i0': 0, 'info': None,
                  'getinfo': True, 'method': 'euler',
                  'dw': None, 'corr': None, 'rho': None,
@@ -348,7 +348,7 @@ def test_kfunc_params():
     for X in (sp.heston_process, sp.heston,
               sp.full_heston_process, sp.heston_xy):
         assert_(kf(X)(vshape=2).params ==
-                {'paths': 1, 'vshape': 2, 'dtype': None,
+                {'paths': 1, 'vshape': 2, 'dtype': None, 'rng': None,
                  'steps': None, 'i0': 0, 'info': None,
                  'getinfo': True, 'method': 'euler',
                  'dw': None, 'corr': None, 'rho': None,
@@ -357,7 +357,7 @@ def test_kfunc_params():
 
     for X in (sp.jumpdiff_process, sp.jumpdiff):
         assert_(kf(X)(vshape=2).params ==
-                {'paths': 1, 'vshape': 2, 'dtype': None,
+                {'paths': 1, 'vshape': 2, 'dtype': None, 'rng': None,
                  'steps': None, 'i0': 0, 'info': None,
                  'getinfo': True, 'method': 'euler', 'ptype': int,
                  'dw': None, 'corr': None, 'rho': None,
@@ -366,7 +366,7 @@ def test_kfunc_params():
 
     for X in (sp.merton_jumpdiff_process, sp.mjd):
         assert_(kf(X)(vshape=2).params ==
-                {'paths': 1, 'vshape': 2, 'dtype': None,
+                {'paths': 1, 'vshape': 2, 'dtype': None, 'rng': None,
                  'steps': None, 'i0': 0, 'info': None,
                  'getinfo': True, 'method': 'euler', 'ptype': int,
                  'dw': None, 'corr': None, 'rho': None,
@@ -375,7 +375,7 @@ def test_kfunc_params():
 
     for X in (sp.kou_jumpdiff_process, sp.kou):
         assert_(kf(X)(vshape=2).params ==
-                {'paths': 1, 'vshape': 2, 'dtype': None,
+                {'paths': 1, 'vshape': 2, 'dtype': None, 'rng': None,
                  'steps': None, 'i0': 0, 'info': None,
                  'getinfo': True, 'method': 'euler', 'ptype': int,
                  'dw': None, 'corr': None, 'rho': None,
