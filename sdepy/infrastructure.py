@@ -42,6 +42,12 @@ except AttributeError:
 #  Private functions for recurring tasks
 ########################################
 
+def _get_default_rng():
+    """Get current default random number generator, as stored in
+    sdepy.infrastructure.default_rng."""
+    return default_rng
+
+
 def _shape_setup(shape):
     """Array shape preprocessing, return (shape,) if shape is an integer."""
     return (shape,) if isinstance(shape, int) else shape
@@ -1303,7 +1309,7 @@ class source:
     dtype : data-type
         Data type of source values. Defaults to ``None``.
     rng : numpy.random.Generator, or numpy.random.RandomState, or None
-        Random numbers generator used. If ``None``, use
+        Random numbers generator used. If ``None``, defaults to
         ``sdepy.infrastructure.default_rng``, a global variabile
         initialized on import to ``numpy.random.default_rng()``.
 
@@ -1335,13 +1341,14 @@ class source:
 
     Attributes
     ----------
+    rng
     size
     t
     """
 
     def __init__(self, *, paths=1, vshape=(), dtype=None, rng=None):
-        self.paths, self.vshape, self.dtype = paths, vshape, dtype
-        self.vshape = _shape_setup(self.vshape)
+        self.paths, self.dtype = paths, dtype
+        self.vshape = _shape_setup(vshape)
         if not isinstance(rng, _rng_types):
             raise TypeError(
                 f'rng should be an instance of `numpy.random.Generator` '
@@ -1357,6 +1364,9 @@ class source:
 
     @property
     def rng(self):
+        """Read-only access to the random number generator used
+        by the stochasticity source.
+        """
         # prevent modifications of the `rng` attribute (for `true_source`
         # subclasses, such changes would silently fail to propagate
         # to sources stored in `_dw`, `_dn` or `_dj` attributes).
@@ -1396,7 +1406,7 @@ class wiener_source(source):
     dtype : data-type
         Data type of source values. Defaults to ``None``.
     rng : numpy.random.Generator, or numpy.random.RandomState, or None
-        Random numbers generator used. If ``None``, use
+        Random numbers generator used. If ``None``, defaults to
         ``sdepy.infrastructure.default_rng``, a global variabile
         initialized on import to ``numpy.random.default_rng()``.
     corr : array-like, or callable, or None
@@ -1573,7 +1583,7 @@ class poisson_source(source):
     dtype : data-type
         Data type of source values. Defaults to ``int``.
     rng : numpy.random.Generator, or numpy.random.RandomState, or None
-        Random numbers generator used. If ``None``, use
+        Random numbers generator used. If ``None``, defaults to
         ``sdepy.infrastructure.default_rng``, a global variabile
         initialized on import to ``numpy.random.default_rng()``.
     lam : array-like, or callable
@@ -1889,7 +1899,7 @@ class cpoisson_source(source):
     dtype : data-type
         Data type of source values. Defaults to ``None``.
     rng : numpy.random.Generator, or numpy.random.RandomState, or None
-        Random numbers generator used. If ``None``, use
+        Random numbers generator used. If ``None``, defaults to
         ``sdepy.infrastructure.default_rng``, a global variabile
         initialized on import to ``numpy.random.default_rng()``.
         Used to generate Poisson process increments (unless ``dn`` is
@@ -2052,14 +2062,14 @@ def _antithetics(source_class, transform):
     """
 
     class antithetics_class(source):
-        def __init__(self, *, paths=2, vshape=(), **args):
-            self.paths = paths
-            self.vshape = _shape_setup(vshape)
+        def __init__(self, *, paths=2, vshape=(),
+                     dtype=None, rng=None, **args):
             if paths % 2:
                 raise ValueError(
                     'the number of paths for sources with antithetics '
                     'should be even, not {}'.format(paths))
-            self._dz = source_class(paths=paths//2, vshape=vshape, **args)
+            self._dz = source_class(paths=paths//2, vshape=vshape,
+                                    dtype=dtype, rng=rng, **args)
 
         __init__.__doc__ = ("See {} class documentation"
                             .format(source_class.__name__))
@@ -2067,6 +2077,22 @@ def _antithetics(source_class, transform):
         def __call__(self, t, dt=None):
             dz = self._dz(t, dt)
             return np.concatenate((dz, transform(dz)), axis=-1)
+
+        @property
+        def paths(self):
+            return 2*self._dz.paths
+
+        @property
+        def vshape(self):
+            return self._dz.vshape
+
+        @property
+        def dtype(self):
+            return self._dz.dtype
+
+        @property
+        def rng(self):
+            return self._dz.rng
 
     return antithetics_class
 

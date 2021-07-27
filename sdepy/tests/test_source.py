@@ -194,6 +194,36 @@ def source_general(paths, dtype, source_and_params):
     else:
         assert_(False)
 
+    # test rng parameter
+    try:
+        make_rngs = (
+            np.random.default_rng,
+            np.random.RandomState,
+            lambda z: np.random.Generator(np.random.PCG64(z)),
+        )
+    except AttributeError:
+        return
+    for make_rng in make_rngs:
+        rng1 = make_rng(SEED)
+        rng2 = make_rng(SEED)
+        assert rng1 is not rng2
+        src1 = cls(paths=paths, dtype=dtype, rng=rng1, **params)
+        src2 = cls(paths=paths, dtype=dtype, rng=rng2, **params)
+        assert src1.rng is rng1
+        assert src2.rng is rng2
+        s1, s2 = src1(0., 1.), src2(0., 1.)
+        assert_allclose(s1, s2)
+
+        # test that global sdepy.infrastructure.default_rng
+        # propagates correctly as a default
+        tmp = sdepy.infrastructure.default_rng
+        sdepy.infrastructure.default_rng = make_rng(SEED)
+        src3 = cls(paths=paths, dtype=dtype, rng=None, **params)
+        assert src3.rng is sdepy.infrastructure.default_rng
+        s3 = src3(0., 1.)
+        assert_allclose(s1, s3)
+        sdepy.infrastructure.default_rng = tmp
+
 
 # ---------------------
 # source specific tests

@@ -23,6 +23,7 @@ from .infrastructure import (
 ########################################
 
 from .infrastructure import (
+    _get_default_rng,
     _shape_setup,
     _const_param_setup,
     _variable_param_setup,
@@ -832,6 +833,11 @@ class SDE:
         Shape of the values of the process.
     dtype : data-type, optional
         Data-type of the process. Defaults to the numpy default.
+    rng : numpy.random.Generator, or numpy.random.RandomState, or None
+        Random numbers generator used to instantiate sources.
+        If ``None``, defaults to
+        ``sdepy.infrastructure.default_rng``, a global variabile
+        initialized on import to ``numpy.random.default_rng()``.
     steps : iterable, or int, or None
         Specification of the time points to be touched during integration
         (as accepted by a cooperating ``integrator`` class).
@@ -865,7 +871,8 @@ class SDE:
         of ``sde``, ``init`` and ``more`` methods, and stochasticity sources
         parameters, as implied by the signature of ``source_{id}`` methods.
         Each keyword should be used once (e.g. ``corr``, a ``source_dw``
-        parameter, cannot be used as the name of a SDE parameter).
+        parameter, should not be used as the name of a SDE parameter) or,
+        if repeated, must have consistent default values.
 
     Returns
     -------
@@ -1071,9 +1078,8 @@ class SDE:
     # initialization
     # --------------
 
-    def __init__(self, *, paths=1,
-                 vshape=(),
-                 dtype=None, steps=None, i0=0,
+    def __init__(self, *, paths=1, vshape=(), dtype=None, rng=None,
+                 steps=None, i0=0,
                  info=None, getinfo=True,
                  method='euler',
                  **args):
@@ -1114,6 +1120,14 @@ class SDE:
         # set paths and dtype
         self.paths = paths
         self.dtype = dtype
+
+        # set rng passed upon source instantiation
+        # (needed for compatibility with legacy numpy versions,
+        # for which sources accept only rng=None)
+        self._rng_asis = rng
+        # set rng accessed via the rng attribute (in case rng is None,
+        # should be the default_rng at the time of instantiation)
+        self._rng = _get_default_rng() if (rng is None) else rng
 
         # setup stochasticity sources
         # (this uses paths, shapes and dtype attributes)
@@ -1223,6 +1237,15 @@ class SDE:
     # ------------------------------
 
     @property
+    def rng(self):
+        """Read-only access to the random number generator used
+        to instantiate stochasticity sources.
+        """
+        # prevent modifications of the `rng` attribute (changes would silently
+        # fail to propagate to sources).
+        return self._rng
+
+    @property
     def args(self):
         """
         Stores parameters passed as ``**args`` upon initialization
@@ -1294,7 +1317,8 @@ class SDE:
         ----------
         dw : source, or source subclass, or None
             If an object complying with the ``source`` protocol,
-            it is returned (``corr`` and ``rho`` are ignored).
+            it is returned (``corr`` and ``rho``, as well as
+            ``self.dtype`` and ``self.rng``, are ignored).
             If a source subclass, it is instantiated with the
             given parameters, and returned. If None, a
             new instance of ``wiener_source`` is returned, with
@@ -1305,7 +1329,10 @@ class SDE:
         -------
         An object complying with the ``source`` protocol,
         instantiating the requested stochasticity source.
-        The shape of source values is set to ``wshape``.
+        The shape and paths of source values are set to
+        ``self.paths``, ``self.wshape`` respectively.
+        If instantiated, ``dtype=self.dtype`` and ``rng=self.rng``
+        keywords are used upon instantiation.
 
         See Also
         --------
@@ -1313,7 +1340,7 @@ class SDE:
         """
         return _source_setup(dw, wiener_source,
                              paths=self.paths, vshape=self.wshape,
-                             dtype=self.dtype,
+                             dtype=self.dtype, rng=self._rng_asis,
                              corr=corr, rho=rho)
 
     def source_dn(self,
@@ -1326,7 +1353,8 @@ class SDE:
         ----------
         dn : source, or source subclass, or None
             If an object complying with the ``source`` protocol,
-            it is returned (``ptype`` and ``lam`` are ignored).
+            it is returned (``ptype`` and ``lam``, as well as
+            ``self.rng``, are ignored).
             If a source subclass, it is instantiated with the
             given parameters, and returned. If None, a
             new instance of ``poisson_source`` is returned, with
@@ -1337,7 +1365,10 @@ class SDE:
         -------
         An object complying with the ``source`` protocol,
         instantiating the requested stochasticity source.
-        The shape of source values is set to ``wshape``.
+        The shape and paths of source values are set to
+        ``self.paths``, ``self.wshape`` respectively.
+        If instantiated, ``rng=self.rng`` keyword is used
+        upon instantiation.
 
         See Also
         --------
@@ -1346,7 +1377,7 @@ class SDE:
         return _source_setup(dn, poisson_source,
                              paths=self.paths, vshape=self.wshape,
                              # dtype of the poisson source is ptype
-                             dtype=ptype,
+                             dtype=ptype, rng=self._rng_asis,
                              lam=lam)
 
     def source_dj(self,
@@ -1361,7 +1392,8 @@ class SDE:
         ----------
         dj : source, or source subclass, or None
             If an object complying with the ``source`` protocol,
-            it is returned (``ptype``, ``lam`` and ``y`` are ignored).
+            it is returned (``ptype``, ``lam`` and ``y``, as well as
+            ``self.dtype`` and ``self.rng``, are ignored).
             If a source subclass, it is instantiated with the
             given parameters, and returned. If None, a
             new instance of ``cpoisson_source`` is returned, with
@@ -1372,7 +1404,10 @@ class SDE:
         -------
         An object complying with the ``source`` protocol,
         instantiating the requested stochasticity source.
-        The shape of source values is set to ``wshape``.
+        The shape and paths of source values are set to
+        ``self.paths``, ``self.wshape`` respectively.
+        If instantiated, ``dtype=self.dtype`` and ``rng=self.rng``
+        keywords are used upon instantiation.
 
         See Also
         --------
@@ -1381,6 +1416,7 @@ class SDE:
         return _source_setup(dj, cpoisson_source,
                              paths=self.paths, vshape=self.wshape,
                              dtype=self.dtype,  # dtype of the source
+                             rng=self._rng_asis,
                              dn=dn,
                              ptype=ptype,  # dtype of underlying poisson source
                              lam=lam,
@@ -2036,8 +2072,8 @@ class wiener_SDE(SDE):
 
 class wiener_process(wiener_SDE, integrator):
     """
-    wiener_process(paths=1, vshape=(), dtype=None, steps=None, i0=0,
-    info=None, getinfo=True, method='euler',
+    wiener_process(paths=1, vshape=(), dtype=None, rng=None,
+    steps=None, i0=0, info=None, getinfo=True, method='euler',
     x0=0., mu=0., sigma=1., dw=None, corr=None, rho=None)
 
     Wiener process (Brownian motion) with drift.
@@ -2053,7 +2089,7 @@ class wiener_process(wiener_SDE, integrator):
 
     Parameters
     ----------
-    paths, vshape, dtype, steps, i0, info, getinfo, method
+    paths, vshape, dtype, rng, steps, i0, info, getinfo, method
         See ``SDE`` class documentation.
     x0 : array-like
         Initial condition.
@@ -2096,8 +2132,8 @@ class lognorm_SDE(SDE):
 
 class lognorm_process(lognorm_SDE, integrator):
     """
-    lognorm_process(paths=1, vshape=(), dtype=None, steps=None, i0=0,
-    info=None, getinfo=True, method='euler',
+    lognorm_process(paths=1, vshape=(), dtype=None, rng=None,
+    steps=None, i0=0, info=None, getinfo=True, method='euler',
     x0=1., mu=0., sigma=1., dw=None, corr=None, rho=None)
 
     Lognormal process.
@@ -2113,7 +2149,7 @@ class lognorm_process(lognorm_SDE, integrator):
 
     Parameters
     ----------
-    paths, vshape, dtype, steps, i0, info, getinfo, method
+    paths, vshape, dtype, rng, steps, i0, info, getinfo, method
         See ``SDE`` class documentation.
     x0 : array-like
         Initial condition.
@@ -2165,8 +2201,8 @@ class ornstein_uhlenbeck_SDE(SDE):
 
 class ornstein_uhlenbeck_process(ornstein_uhlenbeck_SDE, integrator):
     """
-    ornstein_uhlenbeck_process(paths=1, vshape=(), dtype=None, steps=None,
-    i0=0, info=None, getinfo=True, method='euler',
+    ornstein_uhlenbeck_process(paths=1, vshape=(), dtype=None, rng=None,
+    steps=None, i0=0, info=None, getinfo=True, method='euler',
     x0=0., theta=0., k=1., sigma=1., dw=None, corr=None, rho=None)
 
     Ornstein-Uhlenbeck process (mean-reverting Brownian motion).
@@ -2182,7 +2218,7 @@ class ornstein_uhlenbeck_process(ornstein_uhlenbeck_SDE, integrator):
 
     Parameters
     ----------
-    paths, vshape, dtype, steps, i0, info, getinfo, method
+    paths, vshape, dtype, rng, steps, i0, info, getinfo, method
         See ``SDE`` class documentation.
     x0 : array-like
         Initial condition.
@@ -2238,8 +2274,8 @@ class hull_white_SDE(SDE):
 
 class hull_white_process(hull_white_SDE, integrator):
     """
-    hull_white_process(paths=1, vshape=(), dtype=None, steps=None, i0=0,
-    info=None, getinfo=True, method='euler',
+    hull_white_process(paths=1, vshape=(), dtype=None, rng=None,
+    steps=None, i0=0, info=None, getinfo=True, method='euler',
     factors=1, x0=0., theta=0., k=1., sigma=1., dw=None, corr=None, rho=None)
 
     F-factors Hull-White process (sum of F correlated mean-reverting Brownian
@@ -2258,7 +2294,7 @@ class hull_white_process(hull_white_SDE, integrator):
 
     Parameters
     ----------
-    paths, vshape, dtype, steps, i0, info, getinfo, method
+    paths, vshape, dtype, rng, steps, i0, info, getinfo, method
         See ``SDE`` class documentation.
     x0 : array-like
         Initial condition.
@@ -2281,8 +2317,8 @@ class hull_white_process(hull_white_SDE, integrator):
 
 class hull_white_1factor_process(ornstein_uhlenbeck_process):
     """
-hull_white_1factor_process(paths=1, vshape=(), dtype=None, steps=None, i0=0,
-info=None, getinfo=True, method='euler',
+hull_white_1factor_process(paths=1, vshape=(), dtype=None, rng=None,
+steps=None, i0=0, info=None, getinfo=True, method='euler',
 x0=0., theta=0., k=1., sigma=1., dw=None, corr=None, rho=None)
 
 1-factor Hull-White process (F=1 Hull-White process with F-index
@@ -2320,8 +2356,8 @@ class cox_ingersoll_ross_SDE(SDE):
 
 class cox_ingersoll_ross_process(cox_ingersoll_ross_SDE, integrator):
     """
-    cox_ingersoll_ross_process(paths=1, vshape=(), dtype=None, steps=None,
-    i0=0, info=None, getinfo=True, method='euler',
+    cox_ingersoll_ross_process(paths=1, vshape=(), dtype=None, rng=None,
+    steps=None, i0=0, info=None, getinfo=True, method='euler',
     x0=1., theta=1., k=1., xi=1., dw=None, corr=None, rho=None)
 
     Cox-Ingersoll-Ross mean reverting process.
@@ -2337,7 +2373,7 @@ class cox_ingersoll_ross_process(cox_ingersoll_ross_SDE, integrator):
 
     Parameters
     ----------
-    paths, vshape, dtype, steps, i0, info, getinfo, method
+    paths, vshape, dtype, rng, steps, i0, info, getinfo, method
         See ``SDE`` class documentation.
     x0 : array-like
         Initial condition.
@@ -2409,8 +2445,8 @@ class full_heston_SDE(SDEs):
 
 
 class full_heston_process(full_heston_SDE, integrator):
-    """full_heston_process(paths=1, vshape=(), dtype=None, steps=None,
-    i0=0, info=None, getinfo=True, method='euler',
+    """full_heston_process(paths=1, vshape=(), dtype=None, rng=None,
+    steps=None, i0=0, info=None, getinfo=True, method='euler',
     x0=1., mu=0., sigma=1., y0=1., theta=1., k=1., xi=1.,
     dw=None, corr=None, rho=None)
 
@@ -2435,7 +2471,7 @@ class full_heston_process(full_heston_SDE, integrator):
 
     Parameters
     ----------
-    paths, vshape, dtype, steps, i0, info, getinfo, method
+    paths, vshape, dtype, rng, steps, i0, info, getinfo, method
         See ``SDE`` class documentation.
     x0, y0 : array-like
         Initial conditions for ``x(t)`` and ``y(t)`` processes respectively.
@@ -2506,8 +2542,8 @@ class heston_SDE(full_heston_SDE):
 
 
 class heston_process(heston_SDE, integrator):
-    """heston_process(paths=1, vshape=(), dtype=None, steps=None,
-    i0=0, info=None, getinfo=True, method='euler',
+    """heston_process(paths=1, vshape=(), dtype=None, rng=None,
+    steps=None, i0=0, info=None, getinfo=True, method='euler',
     x0=1., mu=0., sigma=1., y0=1., theta=1., k=1., xi=1.,
     dw=None, corr=None, rho=None)
 
@@ -2518,7 +2554,7 @@ class heston_process(heston_SDE, integrator):
 
     Parameters
     ----------
-    paths, vshape, dtype, steps, i0, info, getinfo, method
+    paths, vshape, dtype, rng, steps, i0, info, getinfo, method
         See ``SDE`` class documentation.
     x0, mu, sigma, y0, theta, k, xi, dw, corr, rho
         See ``full_heston_process`` class documentation.
@@ -2588,8 +2624,8 @@ class jumpdiff_SDE(SDE):
 
 
 class jumpdiff_process(jumpdiff_SDE, integrator):
-    """jumpdiff_process(paths=1, vshape=(), dtype=None, steps=None,
-    i0=0, info=None, getinfo=True, method='euler',
+    """jumpdiff_process(paths=1, vshape=(), dtype=None, rng=None,
+    steps=None, i0=0, info=None, getinfo=True, method='euler',
     x0=1., mu=0., sigma=1., dw=None, corr=None, rho=None, dj=None, dn=None,
     ptype=int, lam=1., y=None)
 
@@ -2609,7 +2645,7 @@ class jumpdiff_process(jumpdiff_SDE, integrator):
 
     Parameters
     ----------
-    paths, vshape, dtype, steps, i0, info, getinfo, method
+    paths, vshape, dtype, rng, steps, i0, info, getinfo, method
         See ``SDE`` class documentation.
     x0 : array-like
         Initial condition.
@@ -2675,8 +2711,8 @@ class merton_jumpdiff_SDE(jumpdiff_SDE):
 
 
 class merton_jumpdiff_process(merton_jumpdiff_SDE, integrator):
-    """merton_jumpdiff_process(paths=1, vshape=(), dtype=None, steps=None,
-    i0=0, info=None, getinfo=True, method='euler',
+    """merton_jumpdiff_process(paths=1, vshape=(), dtype=None, rng=None,
+    steps=None, i0=0, info=None, getinfo=True, method='euler',
     x0=1., mu=0., sigma=1., dw=None, corr=None, rho=None, dj=None, dn=None,
     ptype=int, lam=1., a=0., b=1.)
 
@@ -2712,8 +2748,8 @@ class kou_jumpdiff_SDE(jumpdiff_SDE):
 
 
 class kou_jumpdiff_process(kou_jumpdiff_SDE, integrator):
-    """kou_jumpdiff_process(paths=1, vshape=(), dtype=None, steps=None,
-    i0=0, info=None, getinfo=True, method='euler',
+    """kou_jumpdiff_process(paths=1, vshape=(), dtype=None, rng=None,
+    steps=None, i0=0, info=None, getinfo=True, method='euler',
     x0=1., mu=0., sigma=1., dw=None, corr=None, rho=None, dj=None, dn=None,
     ptype=int, lam=1., a=0.5, b=0.5, pa=0.5)
 
