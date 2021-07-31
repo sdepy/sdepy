@@ -79,7 +79,7 @@ all_shortcuts = (wiener, lognorm,
 # enumerate test cases with constant parameters and launch tests
 # --------------------------------------------------------------
 def test_processes():
-    legacy_seed(SEED)
+    rng_setup()
 
     # setup some parameter test values
     # --------------------------------
@@ -310,7 +310,7 @@ def test_processes():
 # enumerate test cases with time-dependent parameters and launch tests
 # --------------------------------------------------------------------
 def test_processes_local():
-    legacy_seed(SEED)
+    rng_setup()
 
     # setup some parameter test values
     # --------------------------------
@@ -487,6 +487,7 @@ def processes(cls, params, paths, dtype):
                         )
                     except AttributeError:
                         continue
+                    SEED = 1234
                     for make_rng in make_rngs:
                         rng1 = make_rng(SEED)
                         rng2 = make_rng(SEED)
@@ -549,6 +550,7 @@ def processes(cls, params, paths, dtype):
         )
     except AttributeError:
         return
+    SEED = 1234
     for make_rng in make_rngs:
         rng1 = make_rng(SEED)
         rng2 = make_rng(SEED)
@@ -596,7 +598,7 @@ def test_processes_exceptions():
 
 
 def test_jumps():
-    legacy_seed(SEED)
+    rng_setup()
 
     # jump diffusion process integrated as is
     # (jumpdiff_process integrates the logarithm)
@@ -670,7 +672,7 @@ def test_processes_misc():
     # test exactness of wiener_process and lognorm_process
     # with constant parameters
 
-    legacy_seed(SEED)
+    rng_setup()
     paths = 31
     x0 = 10
     mu, sigma = .2, .7

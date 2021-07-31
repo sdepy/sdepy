@@ -172,9 +172,9 @@ def run_insane(warnings='pass'):
     # run tests with maximum code coverage, in all
     # kfunc modes
     _config.PLOT = True
-    _config.SAVE_ERRORS = True
+    _config.OUTPUT_DIR = TEST_DIR
     _config.VERBOSE = True
-    _config.QUANT_TEST_MODE = 'LD'
+    _config.PATHS = 100
     for k in ('shortcuts', 'all', None):
         _config.KFUNC = k
         reload()
@@ -183,9 +183,9 @@ def run_insane(warnings='pass'):
     # run quantitative tests with high resolution
     # and maximum code coverage
     _config.PLOT = True
-    _config.SAVE_ERRORS = True
+    _config.OUTPUT_DIR = TEST_DIR
     _config.VERBOSE = True
-    _config.QUANT_TEST_MODE = 'HD'
+    _config.PATHS = 100_000
     _config.KFUNC = None
     reload()
     results.append(run('quant or config', warnings=warnings))

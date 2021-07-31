@@ -20,7 +20,7 @@ def test_import():
 
 # enumerate test cases and launch tests
 def test_constructor():
-    legacy_seed(SEED)
+    rng_setup()
 
     # do cases
     t = [2., (5.,), (0, 1.), np.linspace(0., 4., 12)]
@@ -98,7 +98,7 @@ def process_constructor(t, paths, vshape, dtype):
 
 # enumerate test cases and launch tests
 def test_broadcasting():
-    legacy_seed(SEED)
+    rng_setup()
 
     # do cases
     t = [np.linspace(0., 4., 12)]
@@ -195,7 +195,7 @@ def process_broadcasting(t, paths, vshape):
 
 # enumerate test cases and launch tests
 def test_interp():
-    legacy_seed(SEED)
+    rng_setup()
 
     # do cases on t, s, paths and vshape
     t = [2+np.zeros(1), np.linspace(1., 4., 12)]
@@ -261,7 +261,7 @@ def process_interp(t, s, paths, vshape, dtype, kind):
 
 # simple stand alone test on interpolated values
 def test_interp_values():
-    legacy_seed(SEED)
+    rng_setup()
 
     # check interpolated values
     p = process(t=(1, 2, 3.), v=(1, 4, 9.))
@@ -277,7 +277,7 @@ def test_interp_values():
 
 # enumerate test cases and launch tests
 def test_t_getitem():
-    legacy_seed(SEED)
+    rng_setup()
 
     # do cases
     t = [np.linspace(1., 4., 12)]
@@ -321,7 +321,7 @@ def process_t_getitem(t, paths, vshape):
 
 # enumerate test cases and launch tests
 def test_p_getitem():
-    legacy_seed(SEED)
+    rng_setup()
 
     # do cases
     t = [np.zeros(1) + 2, np.linspace(1., 4., 12)]
@@ -368,7 +368,7 @@ def process_p_getitem(t, paths, vshape):
 
 # enumerate test cases and launch tests
 def test_v_getitem():
-    legacy_seed(SEED)
+    rng_setup()
 
     # do cases
     t = [np.zeros(1) + 2, np.linspace(1., 4., 11)]
@@ -463,7 +463,7 @@ def process_v_getitem(t, paths):
 
 # enumerate test cases and launch tests
 def test_properties():
-    legacy_seed(SEED)
+    rng_setup()
     p = process(t=(1., 2, 4), x=rng().random((3, 5, 7, 11)))
 
     def sharemem(a, b):
@@ -517,7 +517,7 @@ def process_properties(t, paths, vshape, dtype):
 # ----------------
 
 def test_shapeas():
-    legacy_seed(SEED)
+    rng_setup()
 
     def mkp(vshape):
         return process(t=(0, 1), x=rng().random((2,) + vshape + (3,)))
@@ -555,7 +555,7 @@ def test_shapeas():
 # ----------------
 
 def test_copy():
-    legacy_seed(SEED)
+    rng_setup()
 
     p = process(t=(1, 2, 3), x=rng().random((3, 5, 7, 11)))
     q = p.pcopy()
@@ -581,7 +581,7 @@ def test_copy():
 # -----------------------
 
 def test_summary():
-    legacy_seed(SEED)
+    rng_setup()
 
     p = process(t=(1, 2, 3), x=1 + rng().random((3, 5, 7, 11)),
                 dtype=np.float64)
@@ -686,7 +686,7 @@ def test_summary():
 # ----------------------------------------
 
 def test_increments():
-    legacy_seed(SEED)
+    rng_setup()
 
     t = np.linspace(1, 2, 100)
     t *= t
@@ -727,7 +727,7 @@ def test_increments():
 
 # enumerate test cases and launch tests
 def test_chf_cdf():
-    legacy_seed(SEED)
+    rng_setup()
 
     t = [2., (5.,), (0, 1.), np.linspace(0., 4., 17)]
     paths = [1, 19]
@@ -775,7 +775,7 @@ def process_chf_cdf(t, s, u, paths, vshape):
 
 # enumerate test cases and launch tests
 def test_piecewise():
-    legacy_seed(SEED)
+    rng_setup()
 
     dtype = [np.float64, np.float32, np.float16]
     paths = [None, 5]

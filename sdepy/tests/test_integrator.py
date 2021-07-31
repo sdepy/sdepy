@@ -61,7 +61,7 @@ class generator_cls(paths_generator):
 
 # tests with output timeline == integration timeline
 def test_generator_t():
-    legacy_seed(SEED)
+    rng_setup()
 
     integr = generator_cls(paths=1, vshape=(), xw0=1)
     t = np.linspace(0, 10, 11)
@@ -113,7 +113,7 @@ def test_generator_t():
 
 # tests with output timeline != integration timeline
 def test_generator_steps():
-    legacy_seed(SEED)
+    rng_setup()
 
     integr = generator_cls(paths=1, vshape=(), xw0=1,
                            info={})
@@ -168,7 +168,7 @@ class deep_cls(paths_generator):
 
 def test_generator_depth():
 
-    legacy_seed(SEED)
+    rng_setup()
     integr = deep_cls(dtype=int)
     x = integr((1, 2, 3))
     assert_((x == np.array((10, 20, 30)).reshape(-1, 1)).all())
@@ -183,7 +183,7 @@ def test_generator_depth():
 # ------------------------------
 
 def test_SDE():
-    legacy_seed(SEED)
+    rng_setup()
 
     paths = 3
     vshapes = ((), 2, (2, 5))

@@ -45,7 +45,7 @@ true_wiener_source = sp.true_wiener_source
 
 # main test
 def test_source_general():
-    legacy_seed(SEED)
+    rng_setup()
 
     # do cases
     paths = [10]
@@ -203,6 +203,7 @@ def source_general(paths, dtype, source_and_params):
         )
     except AttributeError:
         return
+    SEED = 1234
     for make_rng in make_rngs:
         rng1 = make_rng(SEED)
         rng2 = make_rng(SEED)
@@ -231,7 +232,7 @@ def source_general(paths, dtype, source_and_params):
 
 # main test
 def test_source_specific():
-    legacy_seed(SEED)
+    rng_setup()
 
     # wiener tests
     src = wiener_source(vshape=3, paths=5)
@@ -346,7 +347,7 @@ def test_source_true_wiener():
     rho2, irho2 = (lambda t: 0.1 + t/6, lambda t, t0: 0.1 + (t + t0)/12)
     rho3, irho3 = (None, lambda t, t0: 0)
 
-    legacy_seed(SEED)
+    rng_setup()
     for t0 in (0, 1):
         for rho, irho in ((rho0, irho0), (rho1, irho1),
                           (rho2, irho2), (rho3, irho3)):

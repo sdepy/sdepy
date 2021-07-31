@@ -31,6 +31,11 @@ class _pytest_tester:
         self.module_name = module_name
 
     def __call__(self, label='fast', doctests=False, pytest_args=()):
+        # TODO: change interface to
+        # __call__(self, label='fast', doctests=False, paths=100,
+        #          plot=False, outdir=None, verbose=False,
+        #          rng='legacy', pytest_args=()):
+        #
         """
         Invoke the sdepy testing suite (requires pytest>=3.8.1
         to be installed).
@@ -86,61 +91,43 @@ class _pytest_tester:
 # to be tested
 import sdepy
 import sdepy as sp
-from sdepy import _config
 
 
 # ---------------------------
 # set up plotting if required
 # ---------------------------
 
-if _config.PLOT:
+try:
     import matplotlib.pyplot as plt
-
-    # figure size
     plt.rcParams['figure.figsize'] = 12, 6
 
+except ImportError:
+    pass
 
-# ----------------------
-# common test parameters
-# ----------------------
 
-KFUNC = _config.KFUNC
+# -----------------------------------
+# additional parameters for tests
+# (local to the .tests.shared module)
+# -----------------------------------
 
-# exact equality is tested up to the float resolution times EPS_FACTOR
+# exact equality is tested up to the float resolution times _EPS_FACTOR
 # (see eps function below)
-EPS_FACTOR = 16
+_EPS_FACTOR = 16
 
-# each testing routine should call legacy_seed(SEED) and
+# each testing routine should call rng_setup() and
 # access random numbers via rng().random, rng().normal etc.
-SEED = 1234
+_LEGACY_SEED = 1234
 
 # DIR is the directory used, in quantitative tests,
 # to retrieve expected errors and to save realized errors and plots
-PACKAGE_DIR = os.path.split(sp.__file__)[0]
-DIR = os.path.join(PACKAGE_DIR, 'tests', 'cfr')
-
-# Saving flags
-# PLOT = False disables plots construction and saving
-# (each testing module checks this flag and behaves accordingly).
-# SAVE_ERRORS = False disables saving realized errors
-# (see save_errors() below).
-PLOT = _config.PLOT
-SAVE_ERRORS = _config.SAVE_ERRORS
-
-# testing flags
-QUANT_TEST_FAIL = _config.QUANT_TEST_FAIL
-VERBOSE = _config.VERBOSE
+_PACKAGE_DIR = os.path.split(sdepy.__file__)[0]
+# input dir for legacy rng tests
+_INPUT_DIR = os.path.join(_PACKAGE_DIR, 'tests', 'cfr')
 
 # Relative tolerance when checking expected vs. realized errors:
 # the expected errors to be tested, returned by load_errors,
-# are the stored expected error times (1 + EXPECTED_ERROR_RTOL).
-EXPECTED_ERROR_RTOL = 0.01
-
-# High or low definition of quantitative tests
-QUANT_TEST_MODE = _config.QUANT_TEST_MODE
-assert QUANT_TEST_MODE in {'HD', 'LD'}
-PATHS_HD = 100*1000
-PATHS_LD = 100
+# are the stored expected error times (1 + _EXPECTED_ERROR_RTOL).
+_EXPECTED_ERROR_RTOL = 0.01
 
 
 # --------------------------
@@ -157,20 +144,31 @@ else:
     quant = slow = lambda f: f
 
 
-def legacy_seed(seed):
-    """Use instead of np.random.seed(seed), to use the legacy
-    numpy random numbers, with the given seed, as sdepy default.
+def rng_setup():
+    """Use in each test to setup the sdepy default random number generator
+    (replaces legacy `np.random.seed(SEED)` calls).
     """
+    test_rng = sdepy._config.TEST_RNG
     if sdepy.infrastructure.default_rng == np.random:
-        np.random.seed(seed)
+        # running with legacy numpy versions, without np.random.RandomState:
+        # fall back on numpy global state
+        np.random.seed(_LEGACY_SEED)
+    elif test_rng == 'legacy':
+        # test with numpy Legacy Random Generation
+        sdepy.infrastructure.default_rng = (
+            np.random.RandomState(_LEGACY_SEED))
+    elif test_rng is None:
+        # do not interfere with global sdepy rng
+        pass
+    # else, use rng or rng maker given in _config.TEST_RNG
+    elif callable(test_rng):
+        sdepy.infrastructure.default_rng = test_rng()
     else:
-        sdepy.infrastructure.default_rng = np.random.RandomState(seed)
-    # uncomment this to test using PCG64:
-    # sdepy.infrastructure.default_rng = np.random.default_rng(seed)
+        sdepy.infrastructure.default_rng = test_rng
 
 
 def rng():
-    """Use `rng()` instead of `np.random` to access the current
+    """Use `rng()` in each test to access the current
     sdepy default random number generator."""
     return sdepy.infrastructure.default_rng
 
@@ -190,7 +188,7 @@ def do(testing_function, *case_iterators, **args):
 
 def eps(dtype):
     if np.dtype(dtype).kind in ('f', 'c'):
-        return np.finfo(dtype).resolution * EPS_FACTOR
+        return np.finfo(dtype).resolution * _EPS_FACTOR
     else:
         return 0
 
@@ -212,31 +210,31 @@ noerrors_realized = const_errors(0)
 
 
 def load_errors(context, dtype=float):
-    fname = os.path.join(DIR, context + '_err_expected.txt')
+    if sdepy._config.TEST_RNG != 'legacy':
+        return noerrors_expected
+
+    fname = os.path.join(_INPUT_DIR, context + '_err_expected.txt')
     min_error = eps(float)
 
     def err(error):
-        return max(min_error, abs(float(error)*(1 + EXPECTED_ERROR_RTOL)))
+        return max(min_error, abs(float(error)*(1 + _EXPECTED_ERROR_RTOL)))
 
-    if QUANT_TEST_FAIL:
-        if os.path.exists(fname):
-            with open(fname, 'r') as f:
-                lines = [line.split() for line in f.readlines()]
-                errors = {test_key: (err(mean_error), err(max_error))
-                          for test_key, mean_error, max_error in lines[2:]}
-        else:
-            warnings.warn('No expected errors file found while testing {}: '
-                          'file {} does not exist'.format(context, fname),
-                          RuntimeWarning)
-            errors = noerrors_expected
+    if os.path.exists(fname):
+        with open(fname, 'r') as f:
+            lines = [line.split() for line in f.readlines()]
+            errors = {test_key: (err(mean_error), err(max_error))
+                      for test_key, mean_error, max_error in lines[2:]}
+            return errors
     else:
-        errors = noerrors_expected
-
-    return errors
+        warnings.warn('No expected errors file found while testing {}: '
+                      'file {} does not exist'.format(context, fname),
+                      RuntimeWarning)
+        return noerrors_expected
 
 
 def save_errors(context, errors):
-    if SAVE_ERRORS:
+    DIR = sdepy._config.OUTPUT_DIR
+    if DIR is not None:
         fname = os.path.join(DIR, context + '_err_realized.txt')
         with open(fname, 'w') as f:
             print('{:40} {:>12} {:>12}\n'.format(
@@ -247,8 +245,10 @@ def save_errors(context, errors):
 
 
 def save_figure(fig, fig_id):
-    fname = os.path.join(DIR, fig_id + '.png')
-    fig.savefig(fname, dpi=300)
+    DIR = sdepy._config.OUTPUT_DIR
+    if DIR is not None:
+        fname = os.path.join(DIR, fig_id + '.png')
+        fig.savefig(fname, dpi=300)
 
 
 def plot_histogram(hist, **kwargs):
@@ -261,32 +261,24 @@ def plot_histogram(hist, **kwargs):
 # -----------------------
 
 message = """
-A quantitative test has failed, running in {} definition with {} paths.
-This test relies on the reproducibility of expected errors, once
-random numbers have been seeded with np.random.RandomState({}), and its failure
-may not necessarily indicate that the package is broken.
-Consider changing the test configuration in
-{} by setting
-
-    QUANT_TEST_FAIL = False
-    QUANT_TEST_MODE = 'HD'
-    PLOT = True
-
-and inspecting the plots that are generated in the folder
-{}."""
+A quantitative test has failed, running with {} paths using numpy
+legacy random number generation. This test relies on the exact reproducibility
+of expected errors, once random numbers have been seeded with
+`np.random.RandomState({})`, and its failure may not necessarily indicate
+that the package is broken. Consider running tests as
+`sdepy.test('full', rng=np.random.default_rng(), paths=100000, outdir='.')`
+and inspecting the realized error summaries and plots saved in the current
+directory.
+"""
 
 
 def assert_quant(flag):
 
-    if not flag:
-        definition, paths = (
-            ('low', PATHS_LD) if _config.QUANT_TEST_MODE == 'LD'
-            else ('high', PATHS_HD))
-
-        warnings.warn(
-            message.format(definition, paths, SEED,
-                           os.path.join(PACKAGE_DIR, '_config.py'),
-                           DIR),
-            RuntimeWarning)
-
-    assert_(flag)
+    if (sdepy._config.TEST_RNG == 'legacy') and (not flag):
+        assert_(flag, message.format(sdepy._config.PATHS, _LEGACY_SEED))
+    else:
+        # should never occur, non legacy tests run with expected errors
+        # as `noerrors_expected`
+        assert_(flag, 'Quantitative test dependant on random number '
+                f'generation failed, using '
+                f'rng={sdepy.infrastructure.default_rng}')

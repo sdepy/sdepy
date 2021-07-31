@@ -3,10 +3,9 @@
 QUANTITATIVE (SLOW) TESTS ON REALIZED PROCESSES
 ===============================================
 
-PATHS_HD or PATHS_LD paths are computed for each
-process, according to the QUANT_TEST_MODE flag
-(see 'shared.py' module), on a timeline of 50 points,
-using 50 or 200 integration steps dependant on the process type.
+sdepy._config.PATHS paths are computed for each
+process, on a timeline of 50 points, using 50 or 200
+integration steps dependant on the process type.
 
 Tests on pdf and cdf labeled 'pdf' and 'cdf1'
 cumulate 10 runs using update, pdf and cdf methods
@@ -21,19 +20,14 @@ from numpy import exp, log
 iskfunc = sp.iskfunc
 
 
+@quant
 def test_aaa_config():
     """testall.py: print realized configuration"""
-    if VERBOSE:
+    if sdepy._config.VERBOSE:
         print('\n****', __name__, 'configuration:')
-        print('KFUNC, iskfunc(wiener), iskfunc(wiener_process) =',
-              KFUNC, sp.iskfunc(sp.wiener), sp.iskfunc(sp.wiener_process))
-        print('PLOT, SAVE_ERRORS =',
-              PLOT, SAVE_ERRORS)
-        print('VERBOSE, QUANT_TEST_MODE =',
-              VERBOSE, QUANT_TEST_MODE)
-
-
-test_aaa_config.config = True
+        print('PLOT, PATHS =',
+              sdepy._config.PLOT, sdepy._config.PATHS)
+        print('TEST_RNG =', sdepy._config.TEST_RNG)
 
 
 # --------------------------
@@ -77,7 +71,7 @@ def check_values(context, Xid, t, *tests,
             raise ValueError('unrecognized mode')
         mean_err = delta.mean()
         max_err = delta.max()
-        if VERBOSE:
+        if sdepy._config.VERBOSE:
             print('{:45}{:10.6f} {:10.6f}'
                   .format(key + ' (mean err)', mean_err, err_expected[key][0]))
             print('{:45}{:10.6f} {:10.6f}'
@@ -87,7 +81,7 @@ def check_values(context, Xid, t, *tests,
         err_realized[key] = (mean_err, max_err)
         if brk == key:
             raise RuntimeError('a break was set at {}'.format(key))
-    if PLOT:
+    if sdepy._config.PLOT:
         print('plotting...')
         fig = bfig()
         plots = ((111,), (121, 122), (221, 222, 223,),
@@ -173,12 +167,18 @@ def hw2f_F_wrap2(F):
 @slow
 @quant
 def test_quant():
-    if QUANT_TEST_MODE == 'HD':
-        tst_quant(context='quant5', PATHS=PATHS_HD)
-    elif QUANT_TEST_MODE == 'LD':
-        tst_quant(context='quant2', PATHS=PATHS_LD)
+    PATHS = sdepy._config.PATHS
+    if sdepy._config.TEST_RNG != 'legacy':
+        tst_quant(context='quant' + str(int(PATHS)),
+                  PATHS=PATHS)
+    elif PATHS == 100_000:
+        tst_quant(context='quant5', PATHS=PATHS)
+    elif PATHS == 100:
+        tst_quant(context='quant2', PATHS=PATHS)
     else:
-        raise ValueError()
+        raise ValueError(
+            f'tests with numpy legacy rng require '
+            f'either 100 or 100_000 paths, not {PATHS}')
 
 
 def tst_quant(context, PATHS):
@@ -294,9 +294,9 @@ def quant_case(case, context, err_expected, err_realized, PATHS):
     fargs.pop('steps', None)
 
     # plot paths for visual inspection (no testing)
-    if PLOT:
+    if sdepy._config.PLOT:
         print('plotting...')
-        legacy_seed(SEED)
+        rng_setup()
         fig = bfig()
         plt.title('{}: 30 sample paths'.format(Xid))
         plt.xlabel('t')
@@ -306,7 +306,7 @@ def quant_case(case, context, err_expected, err_realized, PATHS):
 
     # check mean, std and variance
     if Xmean is not None:
-        legacy_seed(SEED)
+        rng_setup()
         x = X(t, paths=PATHS)
         if 'heston' in Xid:
             log(x, out=x)
@@ -323,7 +323,7 @@ def quant_case(case, context, err_expected, err_realized, PATHS):
         del x
 
     # check pdf and cdf
-    legacy_seed(SEED)
+    rng_setup()
     a = sp.montecarlo(bins=200)
     for i in range(10):
         x = X(s, paths=PATHS)
@@ -363,12 +363,18 @@ def quant_case(case, context, err_expected, err_realized, PATHS):
 @slow
 @quant
 def test_params():
-    if QUANT_TEST_MODE == 'HD':
-        tst_params(context='params5', PATHS=PATHS_HD)
-    elif QUANT_TEST_MODE == 'LD':
-        tst_params(context='params2', PATHS=PATHS_LD)
+    PATHS = sdepy._config.PATHS
+    if sdepy._config.TEST_RNG != 'legacy':
+        tst_params(context='params' + str(int(PATHS)),
+                   PATHS=PATHS)
+    elif PATHS == 100_000:
+        tst_params(context='params5', PATHS=PATHS)
+    elif PATHS == 100:
+        tst_params(context='params2', PATHS=PATHS)
     else:
-        raise ValueError()
+        raise ValueError(
+            f'tests with numpy legacy rng require '
+            f'either 100 or 100_000 paths, not {PATHS}')
 
 
 # main test
@@ -533,7 +539,7 @@ def params_case(case, context, err_expected, err_realized, PATHS):
         pvalues = args[param]
 
     # process to be tested
-    legacy_seed(SEED)
+    rng_setup()
     if iskfunc(Xclass):
         # test kfunc call with parameters
         x = Xclass(**args)(s, paths=PATHS)
@@ -587,7 +593,7 @@ def params_case(case, context, err_expected, err_realized, PATHS):
 
 def test_bs():
     """a bare-bone test on Black-Scholes call and put valuation"""
-    legacy_seed(SEED)
+    rng_setup()
 
     Kc, Kp = 1.2, 0.6
     T = 2.
