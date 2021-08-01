@@ -135,6 +135,7 @@ jobs:
         run: |
           cd ./build/tests
           coverage run --rcfile=../../.coveragerc \
+            runtests.py 'no_source()' \
             "run('full', doctests=True, warnings='${{ matrix.warnings }}', rng='legacy')" \
             "run('full', warnings='${{ matrix.warnings }}', plot=True, outdir='.', rng=lambda: np.random.default_rng(1))"
           python runtests.py 'run_quickguide()'
