@@ -5,6 +5,7 @@ import importlib
 import doctest
 import pdb
 
+import numpy as np
 import sdepy
 from sdepy import test
 from sdepy import _config
@@ -137,16 +138,12 @@ def run_quickguide():
         ).failed
 
 
-def run(label='fast', doctests=False, warnings='pass'):
+def run(*args, **kws):
     """
     Run tests with given options
     """
     print_info()
-    pytest_args = {'pass': (),
-                   'fail': ('-W', 'error::Warning')}
-    return int(not test(
-        label=label, doctests=doctests,
-        pytest_args=pytest_args[warnings]))
+    return int(not test(*args, **kws))
 
 
 def run_insane(warnings='pass'):
@@ -171,24 +168,20 @@ def run_insane(warnings='pass'):
 
     # run tests with maximum code coverage, in all
     # kfunc modes
-    _config.PLOT = True
-    _config.OUTPUT_DIR = TEST_DIR
-    _config.VERBOSE = True
-    _config.PATHS = 100
     for k in ('shortcuts', 'all', None):
         _config.KFUNC = k
         reload()
-        results.append(run('full', doctests=True, warnings=warnings))
+        results.append(run('full', doctests=True, warnings=warnings,
+                           plot=True, outdir=TEST_DIR, verbose=1,
+                           paths=100))
 
     # run quantitative tests with high resolution
     # and maximum code coverage
-    _config.PLOT = True
-    _config.OUTPUT_DIR = TEST_DIR
-    _config.VERBOSE = True
-    _config.PATHS = 100_000
     _config.KFUNC = None
     reload()
-    results.append(run('quant or config', warnings=warnings))
+    results.append(run('quant or config', warnings=warnings,
+                       plot=True, outdir=TEST_DIR, verbose=1,
+                       paths=100_000))
 
     # summarize results
     count_failures = sum(results)
