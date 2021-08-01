@@ -10,17 +10,11 @@ iskfunc = sp.iskfunc
 
 def test_aaa_config():
     """testall.py: print realized configuration"""
-    if VERBOSE:
+    if sdepy._config.VERBOSE:
         print('\n****', __name__, 'configuration:')
         print('KFUNC, iskfunc(wiener), iskfunc(wiener_process) =',
-              KFUNC, sp.iskfunc(sp.wiener), sp.iskfunc(sp.wiener_process))
-        print('PLOT, SAVE_ERRORS =',
-              PLOT, SAVE_ERRORS)
-        print('VERBOSE, QUANT_TEST_MODE =',
-              VERBOSE, QUANT_TEST_MODE)
-
-
-test_aaa_config.config = True
+              sdepy._config.KFUNC, sp.iskfunc(sp.wiener),
+              sp.iskfunc(sp.wiener_process))
 
 
 # -----------

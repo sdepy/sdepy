@@ -135,7 +135,7 @@ def test_warnings():
 
 
 def test_analytical():
-    legacy_seed(SEED)
+    rng_setup()
 
     # all functions excluding hw2f stats
     # ----------------------------------

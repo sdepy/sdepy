@@ -12,19 +12,14 @@ import scipy.interpolate
 montecarlo = sp.montecarlo
 
 
+@quant
 def test_aaa_config():
     """testall.py: print realized configuration"""
-    if VERBOSE:
+    if sdepy._config.VERBOSE:
         print('\n****', __name__, 'configuration:')
-        print('KFUNC, iskfunc(wiener), iskfunc(wiener_process) =',
-              KFUNC, sp.iskfunc(sp.wiener), sp.iskfunc(sp.wiener_process))
-        print('PLOT, SAVE_ERRORS =',
-              PLOT, SAVE_ERRORS)
-        print('VERBOSE, QUANT_TEST_MODE =',
-              VERBOSE, QUANT_TEST_MODE)
-
-
-test_aaa_config.config = True
+        print('PLOT, PATHS =',
+              sdepy._config.PLOT, sdepy._config.PATHS)
+        print('TEST_RNG =', sdepy._config.TEST_RNG)
 
 
 # -------------
@@ -33,7 +28,7 @@ test_aaa_config.config = True
 
 # main test
 def test_montecarlo_workflow():
-    legacy_seed(SEED)
+    rng_setup()
 
     # do cases
     shape = [(), (2,), (3, 2)]
@@ -168,7 +163,7 @@ def montecarlo_workflow(shape, paths, dtype):
 
 # main test
 def test_montecarlo_cumulate():
-    legacy_seed(SEED)
+    rng_setup()
 
     shape = [(), (2,), (3, 2)]
     paths = [1, 10]
@@ -220,14 +215,19 @@ def montecarlo_cumulate(shape, paths, dtype):
 @slow
 @quant
 def test_montecarlo_histogram():
-    legacy_seed(SEED)
+    rng_setup()
 
     context = 'histogram'
     err_expected = load_errors(context)
     err_realized = {}
 
     BINS = 50
-    PATHS = 1000*1000
+    if sdepy._config.TEST_RNG == 'legacy':
+        # hack - maintain compatibility with stored errors
+        # for legacy rng tests
+        PATHS = 1_000_000
+    else:
+        PATHS = 100*sdepy._config.PATHS
     RATIO = 20  # ratio of last to first bin in nonlinear bins
     x = np.linspace(0, 1, BINS + 1)
     y = np.full(BINS + 1, RATIO**(1/BINS)).cumprod()
@@ -267,13 +267,13 @@ def test_montecarlo_histogram():
     # slow test with error checking and plotting
     do(montecarlo_histogram, (context,), dist_keys,
        (err_expected,), (err_realized,), ((3, 2),),
-       (dist_info,), (PATHS,), (PLOT,))
+       (dist_info,), (PATHS,), (sdepy._config.PLOT,))
     save_errors(context, err_realized)
 
 
 # cases
 def montecarlo_histogram(context, test_id, err_expected, err_realized,
-                         shape, dist_info, paths, PLOT):
+                         shape, dist_info, paths, plot):
     dist, support, bins, _ = dist_info[test_id]
     test_key = context + '_' + test_id
 
@@ -307,22 +307,23 @@ def montecarlo_histogram(context, test_id, err_expected, err_realized,
     err_realized[test_key] = (mean_err.max(), max_err.max())
 
     # plot worst case
-    if PLOT:
+    if plot:
         print('plotting...')
         i = (max_err == max_err.max())
         i = tuple(np.where(i)[k][0] for k in range(i.ndim))
         counts, bins = a[i].histogram()
         fig = plt.figure()
-        plt.title(test_key + ':\nmean err = {:.5g}, max err = {:.5g}'
-                  .format(float(mean_err[i]), float(max_err[i])) +
-                  '\n error is conunts diff/mean counts')
+        plt.title(test_key + f', paths={paths}:\n'
+                  f'mean err = {float(mean_err[i]):.5g}, '
+                  f'max err = {float(max_err[i]):.5g}\n'
+                  f'error is conunts diff/mean counts')
         plot_histogram((expected_counts, bins), color='g',
                        histtype='step', label='expected', lw=2)
         plot_histogram((counts, bins), color='b',
                        histtype='step', label='realized')
         plt.plot(bins, bins*0 + mean_counts, 'c:', label='mean counts')
         plt.legend()
-        plt.savefig(os.path.join(DIR, test_key + '.png'), dpi=300)
+        save_figure(plt, test_key)
         plt.close(fig)
 
 
@@ -335,14 +336,19 @@ def montecarlo_histogram(context, test_id, err_expected, err_realized,
 @slow
 @quant
 def test_montecarlo_dist():
-    legacy_seed(SEED)
+    rng_setup()
 
     context = 'distr'
     err_expected = load_errors(context)
     err_realized = {}
 
     BINS = 50
-    PATHS = 1000*1000
+    if sdepy._config.TEST_RNG == 'legacy':
+        # hack - maintain compatibility with stored errors
+        # for legacy rng tests
+        PATHS = 1_000_000
+    else:
+        PATHS = 100*sdepy._config.PATHS
     RATIO = 10  # ratio of last to first bin in nonlinear bins
     x = np.linspace(0, 1, BINS + 1)
     y = np.full(BINS + 1, RATIO**(1/BINS)).cumprod()
@@ -383,13 +389,13 @@ def test_montecarlo_dist():
     # slow test with error checking and plotting
     do(montecarlo_dist, (context,), dist_keys,
        (err_expected,), (err_realized,), ((3, 2),),
-       (dist_info,), (PATHS,), (PLOT,))
+       (dist_info,), (PATHS,), (sdepy._config.PLOT,))
     save_errors(context, err_realized)
 
 
 # cases
 def montecarlo_dist(context, test_id, err_expected, err_realized,
-                    shape, dist_info, paths, PLOT):
+                    shape, dist_info, paths, plot):
     dist, support, bins, _, integral_bounds = dist_info[test_id]
     test_key = context + '_' + test_id
 
@@ -477,7 +483,7 @@ def montecarlo_dist(context, test_id, err_expected, err_realized,
         break  # test only first for speed
 
     # plot worst case
-    if PLOT:
+    if plot:
         print('plotting...')
 
         # plot pdf
@@ -487,9 +493,10 @@ def montecarlo_dist(context, test_id, err_expected, err_realized,
         pdf2 = a[i].pdf(x, method='interp')
         counts, bins = a[i].density_histogram()
         fig = plt.figure()
-        plt.title(test_key + '_pdf:\nmean err = {:.5g}, max err = {:.5g}'
-                  .format(float(mean_err_pdf1[i]), float(max_err_pdf1[i])) +
-                  '\n error is conunts diff/mean counts')
+        plt.title(test_key + f', paths={paths}:\n'
+                  f'mean err = {float(mean_err_pdf1[i]):.5g}, '
+                  f'max err = {float(max_err_pdf1[i]):.5g}\n'
+                  f'error is conunts diff/mean counts')
         plot_histogram((counts, bins), color='y',
                        histtype='step', label='realized histogram')
         plt.plot(x, true_pdf, color='g', label='expected pdf', lw=2)
@@ -497,7 +504,7 @@ def montecarlo_dist(context, test_id, err_expected, err_realized,
         plt.plot(x, pdf2, color='r', label='realized pdf - interpolate')
         plt.plot(x, x*0 + mean_pdf, 'c:', label='mean pdf')
         plt.legend()
-        plt.savefig(os.path.join(DIR, test_key + '_pdf.png'), dpi=300)
+        save_figure(plt, test_key + '_pdf')
         plt.close(fig)
 
         # plot cdf
@@ -507,9 +514,10 @@ def montecarlo_dist(context, test_id, err_expected, err_realized,
         cdf2 = a[i].cdf(x, method='interp')
         counts, bins = a[i].density_histogram()
         fig = plt.figure()
-        plt.title(test_key + '_cdf:\nmean err = {:.5g}, max err = {:.5g}'
-                  .format(float(mean_err_cdf1[i]), float(max_err_cdf1[i])) +
-                  '\n error is conunts diff/mean counts')
+        plt.title(test_key + f', paths={paths}:\n'
+                  f'mean err = {float(mean_err_cdf1[i]):.5g}, '
+                  f'max err = {float(max_err_cdf1[i]):.5g}\n'
+                  f'error is conunts diff/mean counts')
         plot_histogram(
             hist=(
                 (counts*np.diff(bins)).cumsum(),
@@ -520,5 +528,5 @@ def montecarlo_dist(context, test_id, err_expected, err_realized,
         plt.plot(x, cdf1, color='b', label='realized cdf - gaussian kde')
         plt.plot(x, cdf2, color='r', label='realized cdf - interpolate')
         plt.legend()
-        plt.savefig(os.path.join(DIR, test_key + '_cdf.png'), dpi=300)
+        save_figure(plt, test_key + '_cdf')
         plt.close(fig)

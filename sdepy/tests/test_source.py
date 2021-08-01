@@ -45,7 +45,7 @@ true_wiener_source = sp.true_wiener_source
 
 # main test
 def test_source_general():
-    legacy_seed(SEED)
+    rng_setup()
 
     # do cases
     paths = [10]
@@ -203,6 +203,7 @@ def source_general(paths, dtype, source_and_params):
         )
     except AttributeError:
         return
+    SEED = 1234
     for make_rng in make_rngs:
         rng1 = make_rng(SEED)
         rng2 = make_rng(SEED)
@@ -231,7 +232,7 @@ def source_general(paths, dtype, source_and_params):
 
 # main test
 def test_source_specific():
-    legacy_seed(SEED)
+    rng_setup()
 
     # wiener tests
     src = wiener_source(vshape=3, paths=5)
@@ -346,27 +347,59 @@ def test_source_true_wiener():
     rho2, irho2 = (lambda t: 0.1 + t/6, lambda t, t0: 0.1 + (t + t0)/12)
     rho3, irho3 = (None, lambda t, t0: 0)
 
-    legacy_seed(SEED)
+    rng_setup()
+    err_realized = {}
+
+    if sdepy._config.TEST_RNG == 'legacy':
+        PATHS = 100_000
+        context = 'true_wiener'
+    else:
+        PATHS = 100*sdepy._config.PATHS
+        context = 'true_wiener' + str(int(PATHS))
+    print('true_wiener')
+
+    def err(a, b):
+        return abs((a - b)/b)
+
+    err_corr = []
+    err_var = []
+    err_incr_corr = []
+    err_incr_var = []
     for t0 in (0, 1):
         for rho, irho in ((rho0, irho0), (rho1, irho1),
                           (rho2, irho2), (rho3, irho3)):
             for vshape, i in zip(((2,), (3, 2)),
                                  (np.index_exp[...], np.index_exp[0])):
-                tw = true_dw(rho=rho, vshape=vshape, paths=100000, t0=t0)
+                tw = true_dw(rho=rho, vshape=vshape, paths=PATHS, t0=t0)
                 for tt in (((6, 2, 4), (-6, -2, -4))):
                     tw(tt)
                     for s in tt:
                         x = tw(s)[i]
                         c = corr(x)
                         v = np.var(x)
-                        assert_allclose(c[0, 1], irho(s, t0),
-                                        rtol=0.02, atol=0.01)
-                        assert_allclose(v, abs(s - t0), rtol=0.02, atol=0.01)
-                        print('.', sep='', end='')
+                        if sdepy._config.TEST_RNG == 'legacy':
+                            assert_allclose(c[0, 1], irho(s, t0),
+                                            rtol=0.02, atol=0.01)
+                            assert_allclose(v, abs(s - t0),
+                                            rtol=0.02, atol=0.01)
+                        err_corr.append(abs(c[0, 1] - irho(s, t0)))
+                        err_var.append(err(v, abs(s - t0)))
                 for s1, s2 in ((4, 6), (2, 6), (2, 4),
                                (-4, -6), (-2, -6), (-2, -4)):
                     c = corr((tw(s2) - tw(s1))[i][0], tw(s1)[i][0])
                     v = np.var((tw(s2) - tw(s1))[i][0])
-                    assert_allclose(c[0, 1], 0, rtol=0.02, atol=0.01)
-                    assert_allclose(v, abs(s2 - s1), rtol=0.02, atol=0.01)
+                    if sdepy._config.TEST_RNG == 'legacy':
+                        assert_allclose(c[0, 1], 0, rtol=0.02, atol=0.01)
+                        assert_allclose(v, abs(s2 - s1), rtol=0.02, atol=0.01)
+                    err_incr_corr.append(abs(c[0, 1]))
+                    err_incr_var.append(err(v, abs(s2 - s1)))
                     print('.', sep='', end='')
+
+    for key, z in zip(('corr', 'var', 'incr_corr', 'incr_var'),
+                        (err_corr, err_var, err_incr_corr, err_incr_var)):
+        err_realized[key] = (np.mean(z), np.max(z))
+        if sdepy._config.VERBOSE:
+            print(f'\n{context + "_" + key + " (mean err, max err)":50}'
+                  f'{np.mean(z):10.6f} {np.max(z):10.6f}', end='')
+
+    save_errors(context, err_realized)
