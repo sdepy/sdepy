@@ -290,16 +290,17 @@ def load_errors(context, dtype=float):
         return noerrors_expected
 
 
-def save_errors(context, errors):
+def save_errors(context, errors,
+                item1='MEAN_ERROR', item2='MAX_ERROR'):
     DIR = sdepy._config.OUTPUT_DIR
     if DIR is not None:
         fname = os.path.join(DIR, context + '_err_realized.txt')
         with open(fname, 'w') as f:
             print('{:40} {:>12} {:>12}\n'.format(
-                'TEST_ID', 'MEAN_ERROR', 'MAX_ERROR'), file=f)
-            for test_key, (mean_error, max_error) in errors.items():
+                'TEST_ID', item1, item2), file=f)
+            for test_key, (err1, err2) in errors.items():
                 print('{:40s} {:12.5g} {:12.5g}'.format(
-                    test_key, mean_error, max_error), file=f)
+                    test_key, err1, err2), file=f)
 
 
 def save_figure(fig, fig_id):
