@@ -30,44 +30,92 @@ class _pytest_tester:
     def __init__(self, module_name):
         self.module_name = module_name
 
-    def __call__(self, label='fast', doctests=False, pytest_args=()):
-        # TODO: change interface to
-        # __call__(self, label='fast', doctests=False, paths=100,
-        #          plot=False, outdir=None, verbose=False,
-        #          rng='legacy', pytest_args=()):
-        #
+    def __call__(self, label='fast', doctests=False, warnings='pass', *,
+                 rng='legacy', paths=100, plot=False, outdir=None, verbose=0,
+                 pytest_args=None):
         """
         Invoke the sdepy testing suite (requires pytest>=3.8.1
         to be installed).
 
         Parameters
         ----------
-        label : string, optional
+        label : string
             Sets the scope of tests. May be one of ``'full'`` (run all tests),
             ``'fast'`` (avoid slow tests), ``'slow'`` (perform slow tests
             only), ``'quant'`` (perform quantitative tests only).
-        doctests : bool, optional
+        doctests : bool
             If ``True``, doctests are performed in addition to the tests
             specified by ``label``.
-        pytest_args : iterable of strings, optional
-            Additional arguments passed to ``pytest.main()``.
+        warnings : string
+            If 'pass' (default), allows warnings during tests.
+            If 'fail', fails tests that issue warnings.
+        rng : string, or numpy.random.Generator, or numpy.random.RandomState,
+              or callable, or None
+            Specifies the random number generator to be used across tests,
+            and the test mode:
+            - If 'legacy' (default), tests are run using legacy
+              numpy random generation with a fixed seed, and fail if realized
+              errors of quantitative tests are not consistent with expected
+              errors for the same seed.
+            - If a numpy.random.Generator, or numpy.random.RandomState
+              instance, this generator is used across tests;
+              if None, the sdepy default random number generator is used.
+              Test results may depend on the order in which single tests
+              are performed, as delegated to pytest.
+            - If a callable with no parameters, returning such an object,
+              it is called once at the beginning of each test, and the
+              returned object is used throughout it. If ``rng`` applies
+              a fixed seed at each call, results do not depend on the order
+              in which single tests are performed.
+        paths : int
+             Reference number of paths used by quantitative tests (the
+             actual number of paths, linked to the given ``path``, may vary).
+             If ``rng`` is set to 'legacy', only values 100 and 100_000
+             are allowed.
+        plot : bool
+             If True, execute test code that generates plots; needs
+             matplotlib to be installed.
+        outdir : string, or None
+             If not None, name of a valid directory in which realized
+             errors of quantitative tests, and plot images
+             if generated, are saved.
+        verborse : int
+             A nonzero value increases verbosity of tests.
+        pytest_args : string, or iterable of strings, or None
+            If not None, specifies an additional argument, or a list
+            of additional arguments, passed to ``pytest.main()``.
 
         Returns
         -------
         ``True`` if all tests passed, ``False`` otherwise.
+
+        Notes
+        -----
+        Non backward compatible changes to the present testing interface
+        may occur in the future, without prior warning.
         """
 
+        # built pytest.main calling args
+        # ------------------------------
         module_path = os.path.abspath(
             sys.modules[self.module_name].__path__[0])
         ini_file = os.path.join(module_path, 'tests', '_pytest.ini')
 
         label = {
             'fast': 'not slow',
-            'full': None
+            'full': None,
             }.get(label, label)
+        warn_args = {
+            'pass': [],
+            'fail': ['-W', 'error::Warning'],
+            }[warnings]
+        user_args = (
+            [] if (pytest_args is None) else
+            ([pytest_args] if isinstance(pytest_args, str) else
+            list(pytest_args)))
 
-        pytest_args = (
-            list(pytest_args) +
+        run_args = (
+            warn_args + user_args +
             ['--verbose', '--capture=no'] +
             ['-c', ini_file] +
             (['-m', label] if label else []) +
@@ -75,8 +123,18 @@ class _pytest_tester:
             ['--pyargs', self.module_name]
             )
 
+        # set testing private options
+        # ---------------------------
+        sdepy._config.TEST_RNG = rng
+        sdepy._config.PATHS = paths
+        sdepy._config.PLOT = plot
+        sdepy._config.OUTPUT_DIR = outdir
+        sdepy._config.VERBOSE = verbose
+
+        # run tests
+        # ---------
         if PYTEST:
-            test_result = pytest.main(pytest_args)
+            test_result = pytest.main(run_args)
             return (test_result == 0)
         else:
             raise ImportError(
@@ -262,7 +320,7 @@ def plot_histogram(hist, **kwargs):
 
 message = """
 A quantitative test has failed, running with {} paths using numpy
-legacy random number generation. This test relies on the exact reproducibility
+legacy random generation. This test relies on the exact reproducibility
 of expected errors, once random numbers have been seeded with
 `np.random.RandomState({})`, and its failure may not necessarily indicate
 that the package is broken. Consider running tests as

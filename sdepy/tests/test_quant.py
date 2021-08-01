@@ -72,10 +72,8 @@ def check_values(context, Xid, t, *tests,
         mean_err = delta.mean()
         max_err = delta.max()
         if sdepy._config.VERBOSE:
-            print('{:45}{:10.6f} {:10.6f}'
-                  .format(key + ' (mean err)', mean_err, err_expected[key][0]))
-            print('{:45}{:10.6f} {:10.6f}'
-                  .format(key + ' (max err)', max_err, err_expected[key][1]))
+            print(f'{key + " (mean err, max err)":50}'
+                  f'{mean_err:10.6f} {max_err:10.6f}')
         assert_quant(mean_err < err_expected[key][0])
         assert_quant(max_err < err_expected[key][1])
         err_realized[key] = (mean_err, max_err)

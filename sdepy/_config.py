@@ -29,7 +29,7 @@ VERBOSE = False
 
 # random number generator, or function returning a
 # properly seeded such generator, to be used in tests;
-# if set to 'legacy', use numpy legacy random number generation,
+# if set to 'legacy', use numpy legacy random generation,
 # and check expected vs. realized errors, failing if found
 # inconsistent
 TEST_RNG = 'legacy'
