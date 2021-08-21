@@ -1872,7 +1872,7 @@ def _SDE_from_function(f, q=None, sources=None, log=False, addaxis=False):
             ids.update(z.keys())
         # consistency check
         if ((q is not None and neq != q) or
-            (sources is not None and set(sources) != ids)):
+                (sources is not None and set(sources) != ids)):
             raise TypeError(
                 'test evaluation of {} inconsistent with given '
                 "'q' or 'sources'".format(f))

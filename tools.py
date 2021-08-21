@@ -95,7 +95,7 @@ def getnotebook(in_, out,
     in_, out = str(pathlib.Path(in_)), str(pathlib.Path(out))
     with open(in_) as f:
         z = list(header) + [x.rstrip() + '\n'
-             for x in f.readlines()[skip:]]
+                            for x in f.readlines()[skip:]]
 
     nb = nbf.v4.new_notebook()
     nb['cells'] = []

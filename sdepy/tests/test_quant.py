@@ -588,6 +588,7 @@ def params_case(case, context, err_expected, err_realized, PATHS):
         check(pvalues, *tests, fig_id='cdf_chf',
               mode='abs', xlabel=param)
 
+
 @quant
 def test_bs():
     """a bare-bone test on Black-Scholes call and put valuation"""

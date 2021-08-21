@@ -162,7 +162,7 @@ def montecarlo_workflow(shape, paths, dtype):
 # -------------
 
 # main test
-#@focus
+# @focus
 def test_montecarlo_cumulate():
     rng_setup()
 

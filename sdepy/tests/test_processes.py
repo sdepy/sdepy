@@ -605,7 +605,7 @@ def test_processes_exceptions():
         assert_raises(ValueError, P, np.arange(6.).reshape(2, 3))
 
 
-#@focus
+# @focus
 def test_jumps():
     rng_setup(force_legacy=True)
 

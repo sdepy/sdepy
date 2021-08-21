@@ -409,7 +409,7 @@ def test_SDE():
     @integrate
     def f_process(t, x):
         return {'dt': 1, 'dw': 1}
-    assert_ (issubclass(f_process, SDE))
+    assert_(issubclass(f_process, SDE))
     assert_(not issubclass(f_process, SDEs))
     x = f_process(x0=1, paths=11, steps=30)(t)
 
@@ -463,12 +463,14 @@ def test_SDE():
         return {'dt': 1}, {'dw': 1}
     xs = f_process(x0=(1,)*2, paths=11, steps=30)(t)
 
-    # test evaluation inconsistent with declared q or sources
+    # test evaluation inconsistent with declared q
     def err():
         @integrate(q=1)
         def f_process(t, x=1., y=1.):
             return {'dt': 1}, {'dw': 1}
     assert_raises(TypeError, err)
+
+    # test evaluation inconsistent with declared sources
     def err():
         @integrate(sources={'dw'})
         def f_process(t, x=1., y=1.):

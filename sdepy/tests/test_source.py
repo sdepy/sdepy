@@ -231,7 +231,7 @@ def source_general(paths, dtype, source_and_params):
 # ---------------------
 
 # main test
-#@focus
+# @focus
 def test_source_specific():
     rng_setup()
 
