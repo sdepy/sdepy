@@ -162,11 +162,12 @@ def montecarlo_workflow(shape, paths, dtype):
 # -------------
 
 # main test
+#@focus
 def test_montecarlo_cumulate():
     rng_setup()
 
     shape = [(), (2,), (3, 2)]
-    paths = [1, 10]
+    paths = [1, 25]
     dtype = [None, float, np.float64, np.float32, np.float16,
              int, np.int64, np.int32, np.int16]
     do(montecarlo_cumulate, shape, paths, dtype)
@@ -175,7 +176,7 @@ def test_montecarlo_cumulate():
 # cases
 def montecarlo_cumulate(shape, paths, dtype):
     PATHS = paths
-    sample = rng().normal(size=shape + (4*PATHS,)).astype(dtype)
+    sample = 1 + rng().normal(size=shape + (4*PATHS,)).astype(dtype)
 
     # full sample as first run
     a = montecarlo(sample)
@@ -184,14 +185,14 @@ def montecarlo_cumulate(shape, paths, dtype):
     b = montecarlo(sample[..., :PATHS])
     b.update(sample[..., PATHS:2*PATHS])
     b.update(sample[..., 2*PATHS:])
-
-    rtol = max(eps(sample.dtype), eps(a.mean().dtype))
-    assert_allclose(a.mean(), b.mean(), rtol=2*rtol)
-    assert_allclose(a.stderr(), b.stderr(), rtol=rtol)
-    assert_allclose(a.mean(), sample.mean(axis=-1),
-                    rtol=rtol)
-    assert_allclose(a.stderr(), sample.std(axis=-1)/np.sqrt(4*PATHS-1),
-                    rtol=rtol)
+    if PATHS > 1:
+        rtol = max(eps(sample.dtype), eps(a.mean().dtype))
+        assert_allclose(a.mean(), b.mean(), rtol=rtol)
+        assert_allclose(a.stderr(), b.stderr(), rtol=rtol)
+        assert_allclose(a.mean(), sample.mean(axis=-1),
+                        rtol=rtol)
+        assert_allclose(a.stderr(), sample.std(axis=-1)/np.sqrt(4*PATHS-1),
+                        rtol=rtol)
 
     # same sample loaded in 3 runs, using same bins
     c = montecarlo()

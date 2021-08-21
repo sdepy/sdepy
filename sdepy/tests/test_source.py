@@ -231,6 +231,7 @@ def source_general(paths, dtype, source_and_params):
 # ---------------------
 
 # main test
+#@focus
 def test_source_specific():
     rng_setup()
 
@@ -275,7 +276,7 @@ def test_source_specific():
             return np.full(size, fill_value=val)
 
     src = cpoisson_source(lam=1., paths=100, ptype=np.int16,
-                              y=const_rv_legacy())
+                          y=const_rv_legacy())
     with assert_warns(DeprecationWarning):
         s, n = src(0, 1), src.dn_value
         assert_allclose(n*val, s, rtol=eps(s.dtype))
@@ -285,27 +286,31 @@ def test_source_specific():
     # true sources tests
     for cls in (true_wiener_source, true_poisson_source, true_cpoisson_source,
                 true_dw, true_dn, true_dj):
-        src = cls(vshape=(2, 3), paths=10, t0=1., z0=2.)
+        z0 = 3.
+        t0 = 1.
+        t1 = t0 + 0.2
+        src = cls(vshape=(2, 3), paths=10, t0=t0, z0=z0)
         size1 = src.size
-        assert_((src(1.) == 2.).all())
-        s = src(2.)
+        assert_((src(t0) == z0).all())
+        s = src(t1)
         assert_(src.size >= 2*size1)
-        assert_array_equal(src(2.), s)
+        assert_array_equal(src(t1), s)
         for dt in [-0.1, -1e-6, 0, 1e-6, 0.1]:
-            z = src(2 + dt)
-            w = src(2) + src(2, dt)
+            z = src(t1 + dt)
+            w = src(t1) + src(t1, dt)
             assert_allclose(z, w, rtol=eps(z.dtype))
             if cls is true_wiener_source:
                 nsigma = 5
                 assert_((np.abs(z-s) <= sqrt(np.abs(dt))*nsigma).all())
-        assert_(src[0, 0](2.).shape == (10,))
-        assert_(src[:, :2](2., .1).shape == (2, 2, 10))
-        assert_allclose(src[:1](2., .1), src(2., .1)[:1], rtol=eps(src.dtype))
+        dt = 0.1
+        assert_(src[0, 0](t1).shape == (10,))
+        assert_(src[:, :2](t1, dt).shape == (2, 2, 10))
+        assert_allclose(src[:1](t1, dt), src(t1, dt)[:1], rtol=eps(src.dtype))
         src2 = src[:, :, np.newaxis]
         assert_(src2.paths == src.paths)
         assert_(src2.dtype == src.dtype)
         assert_(src2.vshape == (2, 3, 1))
-        assert_(src2(1).shape == (2, 3, 1, 10))
+        assert_(src2(t0).shape == (2, 3, 1, 10))
 
     # more true source tests
     for cls in (true_poisson_source, true_cpoisson_source,
@@ -396,7 +401,7 @@ def test_source_true_wiener():
                     print('.', sep='', end='')
 
     for key, z in zip(('corr', 'var', 'incr_corr', 'incr_var'),
-                        (err_corr, err_var, err_incr_corr, err_incr_var)):
+                      (err_corr, err_var, err_incr_corr, err_incr_var)):
         err_realized[key] = (np.mean(z), np.max(z))
         if sdepy._config.VERBOSE:
             print(f'\n{context + "_" + key + " (mean err, max err)":50}'
