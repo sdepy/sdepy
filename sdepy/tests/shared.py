@@ -3,7 +3,9 @@
 COMMON TESTING INFRASTRUCTURE
 =============================
 """
-# common imports
+# -----------------------------------
+# shared imports used in test modules
+# -----------------------------------
 import numpy as np
 from numpy.testing import (
     assert_, assert_raises, assert_warns,
@@ -18,6 +20,19 @@ try:
     PYTEST = True
 except ImportError:
     PYTEST = False
+
+# in all test modules, 'sdeyp' or 'sp' is the package
+# to be tested
+import sdepy
+import sdepy as sp
+
+# set up plotting if required
+try:
+    import matplotlib.pyplot as plt
+    plt.rcParams['figure.figsize'] = 12, 6
+
+except ImportError:
+    pass
 
 
 # -------------
@@ -112,7 +127,7 @@ class _pytest_tester:
         user_args = (
             [] if (pytest_args is None) else
             ([pytest_args] if isinstance(pytest_args, str) else
-            list(pytest_args)))
+             list(pytest_args)))
 
         run_args = (
             warn_args + user_args +
@@ -139,28 +154,6 @@ class _pytest_tester:
         else:
             raise ImportError(
                 'sdepy.test() requires pytest to be installed')
-
-
-# ----------------------------
-# *** PACKAGE TO BE TESTED ***
-# ----------------------------
-
-# in all test modules, 'sp' is the package
-# to be tested
-import sdepy
-import sdepy as sp
-
-
-# ---------------------------
-# set up plotting if required
-# ---------------------------
-
-try:
-    import matplotlib.pyplot as plt
-    plt.rcParams['figure.figsize'] = 12, 6
-
-except ImportError:
-    pass
 
 
 # -----------------------------------
@@ -197,12 +190,14 @@ if PYTEST:
     quant = pytest.mark.quant
     # Decorator to mark test as slow
     slow = pytest.mark.slow
+    # Private decorator to set test focus
+    focus = pytest.mark.focus
 else:
     # dummy decorators in case pytest is not installed
-    quant = slow = lambda f: f
+    quant = slow = focus = lambda f: f
 
 
-def rng_setup():
+def rng_setup(force_legacy=False):
     """Use in each test to setup the sdepy default random number generator
     (replaces legacy `np.random.seed(SEED)` calls).
     """
@@ -211,7 +206,7 @@ def rng_setup():
         # running with legacy numpy versions, without np.random.RandomState:
         # fall back on numpy global state
         np.random.seed(_LEGACY_SEED)
-    elif test_rng == 'legacy':
+    elif (test_rng == 'legacy') or force_legacy:
         # test with numpy Legacy Random Generation
         sdepy.infrastructure.default_rng = (
             np.random.RandomState(_LEGACY_SEED))

@@ -100,8 +100,10 @@ def test_processes():
     def make_S2(rng_):
         if rng_ is None:
             rng_ = rng()
+
         def S2(s, ds):
             return rng_.normal(size=(2, 11))*sqrt(np.abs(ds))
+
         S2.vshape = (2,)
         S2.paths = 11
         return S2
@@ -179,8 +181,9 @@ def test_processes():
             dw=wiener_source(paths=11, vshape=(2,), rng=rng,
                              corr=((1, .25,), (.25, 1)))),
         dict(vshape=(3,), factors=2, dw=Z32),
-        lambda rng=None: dict(vshape=(), factors=3,
-             dw=wiener_source(paths=11, vshape=(3,), corr=CM3, rng=rng)),
+        lambda rng=None: dict(
+            vshape=(), factors=3,
+            dw=wiener_source(paths=11, vshape=(3,), corr=CM3, rng=rng)),
         dict(vshape=(2, 3), factors=5,
              sigma=np.arange(2*3*5).reshape(2, 3, 5, 1)/(300)),
         dict(vshape=2, factors=3, dw=Z23),
@@ -246,7 +249,8 @@ def test_processes():
         dict(vshape=(2, 3, 1), rho=.25),
         lambda rng=None: dict(
             vshape=(3), dw=wiener_source(paths=11, vshape=(6,), rng=rng)),
-        lambda rng=None: dict(vshape=(2, 3, 1),
+        lambda rng=None: dict(
+            vshape=(2, 3, 1),
             dw=true_wiener_source(paths=11, vshape=(2, 3, 2), rng=rng)),
         dict(vshape=(), dw=Z2),
         lambda rng=None: dict(vshape=(), dw=make_S2(rng)),
@@ -276,7 +280,8 @@ def test_processes():
         lambda rng=None: dict(
             vshape=2, dj=cpoisson_source(paths=11, vshape=2, y=rv, rng=rng)),
         lambda rng=None: dict(
-            vshape=2, dj=true_cpoisson_source(paths=11, vshape=2, y=rv, rng=rng)),
+            vshape=2,
+            dj=true_cpoisson_source(paths=11, vshape=2, y=rv, rng=rng)),
         dict(vshape=2, dw=Z2, dj=Z2),
         lambda rng=None: dict(vshape=2, dw=make_S2(rng), dj=make_S2(rng)),
     )
@@ -328,12 +333,15 @@ def test_processes_local():
     def CM2(t): return ((1, .2*t/10), (.2*t/10, 1))
 
     rng_ = rng()
+
     def make_CM6(rng_):
         if rng_ is None:
             rng_ = rng()
+
         def CM6(t):
             C = np.eye(6) + t*0.1*rng_.random((6, 6))
             return (C + C.T)/2
+
         return CM6
 
     def R(t): return 0.5 - 0.1*t
@@ -597,8 +605,9 @@ def test_processes_exceptions():
         assert_raises(ValueError, P, np.arange(6.).reshape(2, 3))
 
 
+# @focus
 def test_jumps():
-    rng_setup()
+    rng_setup(force_legacy=True)
 
     # jump diffusion process integrated as is
     # (jumpdiff_process integrates the logarithm)
@@ -665,6 +674,8 @@ def test_jumps():
     # print(m1, m2, s1, s2)
     assert_(abs(1-m2/m1) < 0.01)
     assert_(abs(1-s2/s1) < 0.03)
+
+    rng_setup(force_legacy=False)
 
 
 def test_processes_misc():

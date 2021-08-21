@@ -129,4 +129,3 @@ if sys.version_info[:2] <= (3, 5):
     warnings.warn('The use of SdePy with Python 3.5 is deprecated '
                   'and will not be supported in future releases.',
                   DeprecationWarning)
-
