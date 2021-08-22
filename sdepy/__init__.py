@@ -100,7 +100,7 @@ from .shortcuts import *
 from .tests.shared import _pytest_tester
 test = _pytest_tester(__name__)
 
-__version__ = '1.1.3-dev0'
+__version__ = '1.2.0'
 
 _exclude = ('sys',
             'np', 'numpy', 'scipy',
