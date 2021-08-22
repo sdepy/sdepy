@@ -229,6 +229,7 @@ def test_montecarlo_histogram():
         PATHS = 1_000_000
     else:
         PATHS = 100*sdepy._config.PATHS
+        context = context + str(int(PATHS))
     RATIO = 20  # ratio of last to first bin in nonlinear bins
     x = np.linspace(0, 1, BINS + 1)
     y = np.full(BINS + 1, RATIO**(1/BINS)).cumprod()
@@ -350,6 +351,7 @@ def test_montecarlo_dist():
         PATHS = 1_000_000
     else:
         PATHS = 100*sdepy._config.PATHS
+        context = context + str(int(PATHS))
     RATIO = 10  # ratio of last to first bin in nonlinear bins
     x = np.linspace(0, 1, BINS + 1)
     y = np.full(BINS + 1, RATIO**(1/BINS)).cumprod()

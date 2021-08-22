@@ -22,20 +22,16 @@ import warnings
 #  Default random number generator
 ########################################
 
-# To use as sdepy default the legacy numpy random generator,
-# seeded with SEED, set
-# >>> sdepy.infrastructure.default_rng = np.random.RandomState(SEED)
-# To use the legacy global state, seeded via `np.random.seed(SEED)`, set
-# >>> sdepy.infrastructure.default_rng = np.random
 try:
+    # use current numpy default generator
     default_rng = np.random.default_rng()
-    _rng_types = (np.random.Generator, np.random.RandomState,
-                  type(None))
+    # To use as sdepy default the legacy numpy random generator,
+    # seeded with SEED, set
+    # >>> sdepy.infrastructure.default_rng = np.random.RandomState(SEED)
 
 except AttributeError:
     # ensure compatibility with legacy numpy and scipy versions
     default_rng = np.random
-    _rng_types = (type(None))
 
 
 ########################################
@@ -1349,11 +1345,11 @@ class source:
     def __init__(self, *, paths=1, vshape=(), dtype=None, rng=None):
         self.paths, self.dtype = paths, dtype
         self.vshape = _shape_setup(vshape)
-        if not isinstance(rng, _rng_types):
+        if isinstance(rng, (int, np.int64, list, np.ndarray)):
+            # catch some possible attempts to pass a seed value as `rng`
             raise TypeError(
-                f'rng should be an instance of `numpy.random.Generator` '
-                f'or `numpy.random.RandomState`, not of {type(rng)}. '
-                f'For legacy numpy versions, only `rng=None` is allowed.')
+                f'`rng` must be an instance of a random number generator, '
+                f'not {type(rng)}.')
         self._rng = default_rng if (rng is None) else rng
 
     def __call__(self, t, dt=None):
