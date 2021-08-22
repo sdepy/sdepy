@@ -15,6 +15,7 @@ import scipy.stats
 import scipy.interpolate
 import bisect
 import inspect
+import sys
 import warnings
 
 
@@ -32,6 +33,12 @@ try:
 except AttributeError:
     # ensure compatibility with legacy numpy and scipy versions
     default_rng = np.random
+    if not sys.warnoptions:
+        warnings.filterwarnings('default', category=DeprecationWarning)
+    warnings.warn('The use of SdePy with early NumPy versions, lacking '
+                  'the `numpy.random.default_rng` function, is deprecated '
+                  'and will not be supported in future releases.',
+                  DeprecationWarning)
 
 
 ########################################
@@ -1272,17 +1279,6 @@ def piecewise(t=0., *, x=None, v=None, dtype=None, mode='mid'):
     p = process(s, x=y, dtype=dtype)
     p.interp_kind = 'nearest'
     return p
-
-
-# safeguard backward compatibility
-def _piecewise_constant_process(*args, **kwds):
-    """private alias of sdepy.piecewise
-    (unused, deprecated)"""
-
-    warnings.warn('call to sdepy.infrastructure._piecewise_constant_process, '
-                  'use sdepy.piecewise instead',
-                  DeprecationWarning)
-    return piecewise(*args, **kwds)
 
 
 #######################################

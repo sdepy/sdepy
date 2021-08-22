@@ -91,8 +91,6 @@ across one million paths takes seconds, one million time steps across
 100 paths takes minutes.
 """
 
-import sys
-import warnings
 from .infrastructure import *
 from .integration import *
 from .analytical import *
@@ -122,10 +120,3 @@ __all__ = [s for s in dir() if
            not s.startswith('_') and s not in _exclude]
 
 __all__ += _include
-
-if sys.version_info[:2] <= (3, 5):
-    if not sys.warnoptions:
-        warnings.filterwarnings('default', category=DeprecationWarning)
-    warnings.warn('The use of SdePy with Python 3.5 is deprecated '
-                  'and will not be supported in future releases.',
-                  DeprecationWarning)
