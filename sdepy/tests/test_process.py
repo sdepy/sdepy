@@ -6,7 +6,6 @@ FORMAL TESTS ON THE PROCESS CLASS
 from .shared import *
 process = sp.process
 piecewise = sp.piecewise
-_piecewise_constant_process = sp.infrastructure._piecewise_constant_process
 
 
 def test_import():
@@ -787,8 +786,6 @@ def test_piecewise():
 
     with assert_raises(ValueError):
         p = piecewise((1, 2), v=(10, 20), mode='zzz')
-    with assert_warns(DeprecationWarning):
-        p = _piecewise_constant_process((1, 2), v=(10, 20))
 
 
 # case testing
