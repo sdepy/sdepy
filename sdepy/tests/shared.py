@@ -40,7 +40,67 @@ except ImportError:
 # -------------
 
 class _pytest_tester:
-    """Tester class invoking pytest.main()"""
+    """
+    Invoke the sdepy testing suite (requires pytest>=3.8.1
+    to be installed).
+
+    Parameters
+    ----------
+    label : string
+        Sets the scope of tests. May be one of ``'full'`` (run all tests),
+        ``'fast'`` (avoid slow tests), ``'slow'`` (perform slow tests
+        only), ``'quant'`` (perform quantitative tests only).
+        Defaults to ``'fast'``.
+    doctests : bool
+        If ``True``, doctests are performed in addition to the tests
+        specified by ``label``.
+    warnings : string
+        If ``'pass'`` (default), allows warnings during tests.
+        If ``'fail'``, fails tests that issue warnings.
+    rng : string, or numpy.random.Generator, or numpy.random.RandomState,
+          or callable, or None
+        Specifies the random number generator to be used across tests,
+        and the test mode:
+
+        - If ``'legacy'`` (default), tests are run using legacy
+          numpy random generation with a fixed seed, and fail if realized
+          errors of quantitative tests are not consistent with expected
+          errors for the same seed.
+        - If a ``numpy.random.Generator``, or ``numpy.random.RandomState``
+          instance, or a callable with no parameters returning such
+          object, this generator is used across tests;
+          if ``None``, the sdepy default random number generator is used.
+          In both cases, realzied errors of quantitative tests are
+          computed, but not checked; to make them available for
+          inspection, use ``plot`` and ``outidir`` parameters.
+
+    paths : int
+         Reference number of paths used by quantitative tests (the
+         actual number of paths, linked to the given ``path``, may vary).
+         If ``rng`` is set to ``'legacy'``, only values 100 and 100_000
+         are allowed.
+    plot : bool
+         If ``True``, execute test code that generates plots; needs
+         matplotlib to be installed.
+    outdir : string, or None
+         If not ``None``, name of a valid directory in which realized
+         errors of quantitative tests, and plot images
+         if generated, are saved.
+    verborse : int
+         A nonzero value increases verbosity of tests.
+    pytest_args : string, or iterable of strings, or None
+        If not ``None``, specifies an additional argument, or a list
+        of additional arguments, passed to ``pytest.main()``.
+
+    Returns
+    -------
+    ``True`` if all tests passed, ``False`` otherwise.
+
+    Notes
+    -----
+    Non backward compatible changes to the present testing interface
+    may occur in the future, without prior warning.
+    """
 
     def __init__(self, module_name):
         self.module_name = module_name
@@ -48,67 +108,6 @@ class _pytest_tester:
     def __call__(self, label='fast', doctests=False, warnings='pass', *,
                  rng='legacy', paths=100, plot=False, outdir=None, verbose=0,
                  pytest_args=None):
-        """
-        Invoke the sdepy testing suite (requires pytest>=3.8.1
-        to be installed).
-
-        Parameters
-        ----------
-        label : string
-            Sets the scope of tests. May be one of ``'full'`` (run all tests),
-            ``'fast'`` (avoid slow tests), ``'slow'`` (perform slow tests
-            only), ``'quant'`` (perform quantitative tests only).
-        doctests : bool
-            If ``True``, doctests are performed in addition to the tests
-            specified by ``label``.
-        warnings : string
-            If 'pass' (default), allows warnings during tests.
-            If 'fail', fails tests that issue warnings.
-        rng : string, or numpy.random.Generator, or numpy.random.RandomState,
-              or callable, or None
-            Specifies the random number generator to be used across tests,
-            and the test mode:
-            - If 'legacy' (default), tests are run using legacy
-              numpy random generation with a fixed seed, and fail if realized
-              errors of quantitative tests are not consistent with expected
-              errors for the same seed.
-            - If a numpy.random.Generator, or numpy.random.RandomState
-              instance, this generator is used across tests;
-              if None, the sdepy default random number generator is used.
-              Test results may depend on the order in which single tests
-              are performed, as delegated to pytest.
-            - If a callable with no parameters, returning such an object,
-              it is called once at the beginning of each test, and the
-              returned object is used throughout it. If ``rng`` applies
-              a fixed seed at each call, results do not depend on the order
-              in which single tests are performed.
-        paths : int
-             Reference number of paths used by quantitative tests (the
-             actual number of paths, linked to the given ``path``, may vary).
-             If ``rng`` is set to 'legacy', only values 100 and 100_000
-             are allowed.
-        plot : bool
-             If True, execute test code that generates plots; needs
-             matplotlib to be installed.
-        outdir : string, or None
-             If not None, name of a valid directory in which realized
-             errors of quantitative tests, and plot images
-             if generated, are saved.
-        verborse : int
-             A nonzero value increases verbosity of tests.
-        pytest_args : string, or iterable of strings, or None
-            If not None, specifies an additional argument, or a list
-            of additional arguments, passed to ``pytest.main()``.
-
-        Returns
-        -------
-        ``True`` if all tests passed, ``False`` otherwise.
-
-        Notes
-        -----
-        Non backward compatible changes to the present testing interface
-        may occur in the future, without prior warning.
-        """
 
         # built pytest.main calling args
         # ------------------------------
