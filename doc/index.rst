@@ -9,4 +9,5 @@ The SdePy Package
    :numbered:
 
    intro
+   releases
    apidoc

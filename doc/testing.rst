@@ -1,5 +1,7 @@
+#######
 Testing
-=======
+#######
+
 
 Tests have been set up within the ``numpy.testing`` framework,
 and require the ``pytest`` package to be installed.
@@ -28,41 +30,38 @@ The quantitative validation of the package, via tests marked as ``'slow'`` and
 ``'quant'``, is done in two steps:
 
 -  To validate a ``sdepy`` release, tests are run
-   with both 100 and 100000 paths against a fixed random seed.
+   with 100_000 or more paths.
    Numerical integration results for the mean, standard deviation,
    probability distribution, and/or characteristic function are compared
    against their exact values computed analytically from the process
    parameters. Comparisons are then plotted and visually inspected, and
    the occasional larger than usual deviation is manually checked to be
    statistically acceptable, i.e. only so few standard deviations
-   off the mark. The plots and the average and maximum errors are recorded
-   in png and text files located in the ``./tests/cfr`` directory, relative
-   to the package home directory where ``sdepy.__file__`` is located.
+   off the mark.
 
 -  Each time ``sdepy.test('full')`` is invoked, to keep testing times
-   manageable and the testing procedure uninvasive, tests are run
-   with 100 paths against the same fixed random seed, without plotting
-   or storing results. The realized errors
-   are then compared and checked against the expected errors,
-   as distributed with the package and stored in the
-   ``./tests/cfr`` directory.
+   manageable and the testing procedure non invasive, tests are run
+   with 100 paths, using NumPy legacy random generation with a fixed seed,
+   the realized errors are then compared and checked against the expected
+   errors, as distributed with the package and stored in the
+   ``./tests/cfr`` directory. Note that such default tests rely on
+   the stable reproducibility of expected errors,
+   across platforms and versions of Python, NumPy and SciPy.
 
-Note that the tests rely on the reproducibility of expected errors, once
-random numbers have been seeded with ``np.random.seed()``, across platforms
-and versions of Python, NumPy and SciPy.
+In order to run tests using current NumPy random generation,
+with a set number of paths (200_000 in the example below),
+and inspect graphs and realized errors as saved in the current directory,
+use the following statement (non backward compatible changes
+to the testing interface may occur in the future,
+without prior warning)::
 
-In order to reproduce the full tests and inspect the
-graphs, change the following configuration settings in the file of the
-``sdepy._config`` subpackage (private, not part of the API, may change
-in the future)::
+   sdepy.test('full', rng=numpy.random.default_rng(),
+              paths=200_000, plot=True, outdir='.')
 
-	PLOT = True
-	SAVE_ERRORS = True
-	QUANT_TEST_MODE = 'HD'
 
-With these settings, tests are run with 100000 paths, and realized errors and
-plots are stored in the ``./tests/cfr`` directory. In case some tests fail,
-to carry out the whole procedure and get the failing errors and plots, set in
-the same configuration file::
+For further details, see ``sdepy.test`` documentation:
 
-	QUANT_TEST_FAIL = False
+.. autosummary::
+   :toctree: generated/
+
+   sdepy.test
