@@ -41,7 +41,7 @@ Start here
 
 
 .. |readthedocs| image:: https://readthedocs.org/projects/sdepy/badge/?version=v1.2.0
-   :target: https://sdepy.readthedocs.io/en/v1.2.0
+   :target: https://sdepy.readthedocs.io
    :alt: Documentation Status
 
 .. |ci| image:: https://github.com/sdepy/sdepy/workflows/CI/badge.svg?branch=v1.2.0
